@@ -527,7 +527,7 @@ function OldLiteratureZone() {
     const title = document.title;
 
     if (format === 'txt') {
-      const element = document.createElement('a');
+      const element = window.document.createElement('a');
       element.setAttribute('href', `data:text/plain;charset=utf-8,${encodeURIComponent(content)}`);
       element.setAttribute('download', `${title}.txt`);
       element.click();

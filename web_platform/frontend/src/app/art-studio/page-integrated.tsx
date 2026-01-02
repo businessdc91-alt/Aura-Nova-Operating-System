@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
@@ -52,8 +52,8 @@ export default function IntegratedArtStudio() {
     style: 'geometric' as const,
     width: 800,
     height: 600,
-    complexity: 5,
-    colorScheme: 'vibrant',
+    complexity: 'moderate' as 'simple' | 'moderate' | 'complex',
+    colorScheme: ['vibrant'] as string[],
     seed: Math.random(),
   });
 
@@ -197,6 +197,11 @@ export default function IntegratedArtStudio() {
         },
         complexity: complexityMap[proceduralSettings.complexity] || 'moderate',
         colorScheme: colorSchemes[proceduralSettings.colorScheme] || colorSchemes.vibrant,
+      const imageData = ProceduralGeneratorService.generateArt({
+        style: proceduralSettings.style,
+        dimensions: { width: proceduralSettings.width, height: proceduralSettings.height },
+        complexity: proceduralSettings.complexity,
+        colorScheme: proceduralSettings.colorScheme,
         seed: proceduralSettings.seed,
       });
 
@@ -208,12 +213,13 @@ export default function IntegratedArtStudio() {
         description: `Auto-generated ${proceduralSettings.style} art`,
         type: 'procedural',
         category: 'generative',
-        tags: [proceduralSettings.style, 'procedural', proceduralSettings.colorScheme],
+        tags: [proceduralSettings.style, 'procedural', ...proceduralSettings.colorScheme],
         thumbnail: imageData,
         fullImage: imageData,
         exportFormats: {
           png: imageData,
         },
+        exportFormats: { png: imageData },
         public: false,
         featured: false,
       });
@@ -260,6 +266,7 @@ export default function IntegratedArtStudio() {
         exportFormats: {
           png: processedImage || uploadedImage || '',
         },
+        exportFormats: { png: processedImage || uploadedImage || '' },
         public: false,
         featured: false,
       });
@@ -287,18 +294,18 @@ export default function IntegratedArtStudio() {
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-900 via-slate-900 to-slate-950 border-b border-slate-800 p-6">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-4xl font-bold mb-2">✨ Integrated Art Studio</h1>
-          <p className="text-slate-400">Background removal • Motion creation • Procedural generation • Gallery</p>
+          <h1 className="text-4xl font-bold mb-2">âœ¨ Integrated Art Studio</h1>
+          <p className="text-slate-400">Background removal â€¢ Motion creation â€¢ Procedural generation â€¢ Gallery</p>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto p-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-4 bg-slate-900 border border-slate-800">
-            <TabsTrigger value="background-remover">🎯 Background</TabsTrigger>
-            <TabsTrigger value="motion-creator">🎬 Motion</TabsTrigger>
-            <TabsTrigger value="procedural">🎨 Procedural</TabsTrigger>
-            <TabsTrigger value="library">📚 Library</TabsTrigger>
+            <TabsTrigger value="background-remover">ðŸŽ¯ Background</TabsTrigger>
+            <TabsTrigger value="motion-creator">ðŸŽ¬ Motion</TabsTrigger>
+            <TabsTrigger value="procedural">ðŸŽ¨ Procedural</TabsTrigger>
+            <TabsTrigger value="library">ðŸ“š Library</TabsTrigger>
           </TabsList>
 
           {/* BACKGROUND REMOVER TAB */}
@@ -385,7 +392,7 @@ export default function IntegratedArtStudio() {
                     disabled={!uploadedImage || isProcessing}
                     className="w-full mt-6 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-700 disabled:cursor-not-allowed rounded-lg font-semibold transition-colors"
                   >
-                    {isProcessing ? 'Processing...' : '✨ Remove Background'}
+                    {isProcessing ? 'Processing...' : 'âœ¨ Remove Background'}
                   </button>
                 </div>
               </div>
@@ -502,7 +509,7 @@ export default function IntegratedArtStudio() {
                             onClick={() => removeKeyframe(idx)}
                             className="text-red-400 hover:text-red-300 text-sm"
                           >
-                            ✕
+                            âœ•
                           </button>
                         </div>
                       ))}
@@ -573,7 +580,7 @@ export default function IntegratedArtStudio() {
                       disabled={motionKeyframes.length === 0 || isProcessing}
                       className="w-full px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-slate-700 rounded-lg font-semibold transition-colors"
                     >
-                      🎬 Generate Animation
+                      ðŸŽ¬ Generate Animation
                     </button>
                   </div>
                 </div>
@@ -609,6 +616,8 @@ export default function IntegratedArtStudio() {
                     <select
                       value={proceduralSettings.colorScheme}
                       onChange={(e) => setProceduralSettings({ ...proceduralSettings, colorScheme: e.target.value })}
+                      value={proceduralSettings.colorScheme[0]}
+                      onChange={(e) => setProceduralSettings({ ...proceduralSettings, colorScheme: [e.target.value] })}
                       className="w-full px-3 py-2 bg-slate-800 rounded border border-slate-700 text-white"
                     >
                       <option value="vibrant">Vibrant</option>
@@ -620,10 +629,7 @@ export default function IntegratedArtStudio() {
 
                   <div>
                     <label className="text-sm text-slate-400 block mb-2">Complexity: {proceduralSettings.complexity}</label>
-                    <input
-                      type="range"
-                      min="1"
-                      max="10"
+                    <select
                       value={proceduralSettings.complexity}
                       onChange={(e) => setProceduralSettings({ ...proceduralSettings, complexity: parseInt(e.target.value) })}
                       className="w-full"
@@ -655,7 +661,7 @@ export default function IntegratedArtStudio() {
                     onClick={() => setProceduralSettings({ ...proceduralSettings, seed: Math.random() })}
                     className="w-full px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg font-semibold transition-colors text-sm"
                   >
-                    🎲 Randomize
+                    ðŸŽ² Randomize
                   </button>
 
                   <button
@@ -663,7 +669,7 @@ export default function IntegratedArtStudio() {
                     disabled={isProcessing}
                     className="w-full px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-slate-700 rounded-lg font-semibold transition-colors"
                   >
-                    {isProcessing ? 'Generating...' : '🎨 Generate Art'}
+                    {isProcessing ? 'Generating...' : 'ðŸŽ¨ Generate Art'}
                   </button>
                 </div>
               </div>
@@ -701,7 +707,7 @@ export default function IntegratedArtStudio() {
                   onClick={loadSavedPieces}
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold transition-colors"
                 >
-                  📚 Refresh Library
+                  ðŸ“š Refresh Library
                 </button>
               </div>
 
@@ -735,3 +741,4 @@ export default function IntegratedArtStudio() {
     </div>
   );
 }
+

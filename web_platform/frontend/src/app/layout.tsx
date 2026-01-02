@@ -1,8 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from 'react-hot-toast';
-import Navbar from '@/components/Navbar';
-import { AuraGuideChat } from '@/components/guide/AuraGuideChat';
+import LayoutWrapper from '@/components/LayoutWrapper';
 
 export const metadata: Metadata = {
   title: 'AuraNova Studios',
@@ -19,11 +18,10 @@ export default function RootLayout({
       <body className="font-sans bg-slate-950 text-white">
         <Navbar />
         <main className="pt-16">
+      <body className={`${display.className} ${mono.variable} bg-slate-950 text-white min-h-screen overflow-x-hidden`}>
+        <LayoutWrapper>
           {children}
-        </main>
-        
-        {/* Aura Guide - Floating Chat Assistant */}
-        <AuraGuideChat variant="floating" />
+        </LayoutWrapper>
         
         <Toaster
           position="bottom-right"

@@ -131,7 +131,7 @@ async function callLocalModel(
       const data = await response.json();
       const content = data.choices?.[0]?.text || '';
 
-      return parseGeneratedContent(content, request, model.friendlyName);
+      return parseGeneratedContent(content, request, model.name);
     } else if (model.platform === 'ollama') {
       // Ollama API
       const response = await fetch(endpoint, {
@@ -151,7 +151,7 @@ async function callLocalModel(
       const data = await response.json();
       const content = data.response || '';
 
-      return parseGeneratedContent(content, request, model.friendlyName);
+      return parseGeneratedContent(content, request, model.name);
     }
 
     return null;

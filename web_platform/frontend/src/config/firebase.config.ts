@@ -1,6 +1,12 @@
 // Firebase configuration
 // This file should be imported in your frontend initialization
 
+declare global {
+  interface Window {
+    __firebaseInitialized?: boolean;
+  }
+}
+
 export const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,

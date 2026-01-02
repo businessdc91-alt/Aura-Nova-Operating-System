@@ -29,6 +29,7 @@ export default function OutfitGeneratorPage() {
     try {
       const generated = OutfitGeneratorService.generateMultipleSuggestions(
         selectedOccasion,
+        [], // Available clothing items (empty for now, can be populated from wardrobe)
         3
       );
       setSuggestions(generated);
@@ -76,16 +77,16 @@ export default function OutfitGeneratorPage() {
             <div className="space-y-2 mb-4">
               {occasions.map((occ) => (
                 <button
-                  key={occ.id}
-                  onClick={() => setSelectedOccasion(occ.id)}
+                  key={occ}
+                  onClick={() => setSelectedOccasion(occ)}
                   className={`w-full px-4 py-3 rounded text-left transition-colors ${
-                    selectedOccasion === occ.id
+                    selectedOccasion === occ
                       ? 'bg-purple-600 text-white'
                       : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
                   }`}
                 >
-                  <p className="font-semibold">{occ.label}</p>
-                  <p className="text-xs opacity-75">{occ.description}</p>
+                  <p className="font-semibold">{occ.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}</p>
+                  <p className="text-xs opacity-75">{occasions_tips[occ as keyof typeof occasions_tips] || 'Perfect for any style!'}</p>
                 </button>
               ))}
             </div>

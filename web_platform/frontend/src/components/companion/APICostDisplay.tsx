@@ -109,17 +109,17 @@ export function APICostIndicator({
 
 export function APIDailyStatsCard() {
   const [stats, setStats] = useState(getDailyAPIStats());
-  const [wallet, setWallet] = useState(getWallet());
+  const [wallet, setWallet] = useState(getWallet('default-user'));
   const [isLocalConfigured, setIsLocalConfigured] = useState(false);
 
   useEffect(() => {
     setStats(getDailyAPIStats());
-    setWallet(getWallet());
+    setWallet(getWallet('default-user'));
     setIsLocalConfigured(isLocalLLMConfigured());
     
     const interval = setInterval(() => {
       setStats(getDailyAPIStats());
-      setWallet(getWallet());
+      setWallet(getWallet('default-user'));
     }, 10000);
     
     return () => clearInterval(interval);

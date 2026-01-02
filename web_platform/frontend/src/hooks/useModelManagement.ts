@@ -103,8 +103,8 @@ export function useModelHealth(modelId?: string) {
       const result = await ModelHealthChecker.checkHealth(model);
       setHealth(result);
 
-      if (!result.healthy) {
-        setError(result.error || 'Model is not responding');
+      if (result.status !== 'healthy') {
+        setError(result.errorMessage || 'Model is not responding');
       }
     } catch (err: any) {
       setError(err.message);

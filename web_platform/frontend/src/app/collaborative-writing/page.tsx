@@ -28,6 +28,9 @@ export default function CollaborativeWritingPage() {
       'current-user', // creator
       vibe.name as unknown as WritingVibe,
       'Creative Writing', // theme
+      'You', // creator
+      vibe, // the full vibe object
+      themes[0] || 'general', // theme
       5 // maxParticipants
     );
 
@@ -215,17 +218,19 @@ export default function CollaborativeWritingPage() {
                         <p className="text-sm text-slate-400 mb-2">{prompt.description}</p>
                       </div>
                       <span className="text-2xl">📝</span>
+                      <span className="text-2xl">{prompt.vibe?.emoji || '📝'}</span>
                     </div>
                     <p className="text-sm italic text-slate-300 mb-3">"{prompt.starter}"</p>
                     <div className="flex gap-2 text-xs">
                       <span className="px-2 py-1 bg-slate-800 rounded">
-                        📝 {prompt.targetWords} words
+                        📝 {prompt.targetWords || 500} words
                       </span>
                       <span className="px-2 py-1 bg-slate-800 rounded">
-                        ⏱️ {prompt.timeLimit} min
+                        ⏱️ {prompt.timeLimit || 30} min
                       </span>
                       <span className="px-2 py-1 bg-slate-800 rounded">
                         🎯 {String(prompt.vibe)}
+                        🎯 {prompt.vibe?.name || 'General'}
                       </span>
                     </div>
                   </div>
@@ -249,6 +254,7 @@ export default function CollaborativeWritingPage() {
                   <div className="flex justify-between">
                     <span className="text-slate-400">Vibe</span>
                     <span className="font-semibold">{String(currentSession.vibe)}</span>
+                    <span className="font-semibold">{currentSession.vibe?.name || 'Unknown'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-400">Theme</span>
@@ -417,6 +423,7 @@ export default function CollaborativeWritingPage() {
                       <div className="flex gap-2 flex-wrap">
                         <span className="px-2 py-1 bg-slate-800 rounded text-xs">
                           {String(session.vibe)}
+                          {session.vibe?.name || 'Unknown'}
                         </span>
                         <span className="px-2 py-1 bg-slate-800 rounded text-xs">
                           {session.theme}

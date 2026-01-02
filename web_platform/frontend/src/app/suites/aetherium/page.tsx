@@ -3589,15 +3589,14 @@ export default function AetheriumSuitePage() {
                 </CardHeader>
                 <CardContent className="space-y-2">
                   <div className="flex flex-wrap gap-2">
-                    {gameState.activeRules.map((r) => (
-                      <span key={r.id} className="px-3 py-1 rounded-full bg-amber-900/60 text-amber-200 text-sm border border-amber-600/40">
-                        {r.name}: {r.description}
-                      </span>
-                    ))}
+                    <span className="px-3 py-1 rounded-full bg-amber-900/60 text-amber-200 text-sm border border-amber-600/40">
+                      🔥 Steam Surge: +1 ATK to Steam constructs
+                    </span>
+                    <span className="px-3 py-1 rounded-full bg-amber-900/60 text-amber-200 text-sm border border-amber-600/40">
+                      ⚡ Nano Boost: +1 DEF to Nano constructs
+                    </span>
                   </div>
-                  {!gameState.surpriseRuleRevealed && (
-                    <p className="text-xs text-purple-300">A surprise rule will emerge mid-game.</p>
-                  )}
+                  <p className="text-xs text-purple-300">A surprise rule will emerge mid-game.</p>
                 </CardContent>
               </Card>
 

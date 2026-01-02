@@ -304,9 +304,9 @@ export default function OutfitManagerPage() {
                       <div
                         className="w-full h-24 rounded mb-2 border border-slate-600"
                         style={{
-                          backgroundColor: item.colors[0] || '#333333',
-                          backgroundImage: item.pattern
-                            ? `repeating-linear-gradient(45deg, transparent, transparent 10px, ${item.colors[1] || '#444444'} 10px, ${item.colors[1] || '#444444'} 20px)`
+                          backgroundColor: item.baseColor || '#333333',
+                          backgroundImage: item.patterns && item.patterns.length > 0
+                            ? `repeating-linear-gradient(45deg, transparent, transparent 10px, ${item.patterns[0]?.color || '#444444'} 10px, ${item.patterns[0]?.color || '#444444'} 20px)`
                             : 'none',
                         }}
                       />
@@ -368,7 +368,7 @@ export default function OutfitManagerPage() {
                       <div className="flex items-center gap-2">
                         <div
                           className="w-4 h-4 rounded"
-                          style={{ backgroundColor: item.colors[0] || '#666666' }}
+                          style={{ backgroundColor: item.baseColor || '#666666' }}
                         />
                         <span>{item.name}</span>
                       </div>

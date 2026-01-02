@@ -168,7 +168,7 @@ export default function PoemsCreatorPage() {
                       onChange={(e) => setPoem({ ...poem, theme: e.target.value })}
                       className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded text-white text-xs"
                     >
-                      {allThemes.map(theme => (
+                      {Object.keys(allThemes).map(theme => (
                         <option key={theme} value={theme}>
                           {theme}
                         </option>
@@ -352,11 +352,6 @@ export default function PoemsCreatorPage() {
                       <span className="px-2 py-1 bg-slate-800 rounded text-xs">
                         {prompt.difficulty}
                       </span>
-                      {prompt.timeLimit && (
-                        <span className="px-2 py-1 bg-slate-800 rounded text-xs">
-                          ⏱️ {prompt.timeLimit}min
-                        </span>
-                      )}
                     </div>
                   </div>
                   <button

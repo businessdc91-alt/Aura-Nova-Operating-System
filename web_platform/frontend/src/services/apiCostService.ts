@@ -442,7 +442,7 @@ export function canUseFunction(functionId: string, forceCloud: boolean = false):
   
   const config = getUserProviderConfig();
   const usage = getUsageForFunction(functionId);
-  const wallet = getWallet();
+  const wallet = getWallet('default-user');
   
   // Check cooldown
   if (func.cooldownMinutes > 0 && usage.lastUsedAt) {
@@ -529,7 +529,7 @@ export function executeFunction(functionId: string, forceCloud: boolean = false)
   
   // Deduct coins if needed
   if (check.cost > 0) {
-    const spendResult = spendCoins(check.cost, `API: ${functionId}`);
+    const spendResult = spendCoins('default-user', check.cost, 'api', `API: ${functionId}`);
     if (!spendResult.success) {
       return {
         success: false,

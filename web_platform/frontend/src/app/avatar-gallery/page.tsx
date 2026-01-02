@@ -63,6 +63,7 @@ export default function AvatarGalleryPage() {
       case 'popular':
         // Views not implemented yet, sort by name for now
         filtered.sort((a, b) => a.name.localeCompare(b.name));
+        filtered.sort((a, b) => (((b as any).views || 0) - ((a as any).views || 0)));
         break;
       case 'name':
         filtered.sort((a, b) => a.name.localeCompare(b.name));
@@ -226,7 +227,7 @@ export default function AvatarGalleryPage() {
                   <h3 className="font-semibold text-sm mb-1">{avatar.name}</h3>
                   <div className="flex items-center justify-between text-xs text-slate-400">
                     <span>{avatar.body.bodyType}</span>
-                    <span className="text-slate-600">{avatar.public ? 'Public' : 'Private'}</span>
+                    <span className="text-slate-600">{(avatar as any).views || 0} views</span>
                   </div>
 
                   <div className="mt-3 pt-3 border-t border-slate-800 flex gap-1 text-xs">
@@ -297,8 +298,8 @@ export default function AvatarGalleryPage() {
                   </div>
 
                   <div>
-                    <h3 className="text-xs text-slate-400 mb-1">Status</h3>
-                    <p className="font-semibold">{selectedAvatar.public ? 'Public' : 'Private'}</p>
+                    <h3 className="text-xs text-slate-400 mb-1">Views</h3>
+                    <p className="font-semibold">{(selectedAvatar as any).views || 0}</p>
                   </div>
 
                   <div className="pt-4 flex gap-2">

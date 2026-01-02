@@ -106,7 +106,7 @@ export const HairMakeupEditor: React.FC<HairMakeupEditorProps> = ({
                 {colorPresets.map(color => (
                   <button
                     key={color}
-                    onClick={() => onHairChange(HairService.setPrimaryColor(hair, color))}
+                    onClick={() => updateHair(HairService.setPrimaryColor(hair, color))}
                     className={`w-6 h-6 rounded border-2 transition-all ${
                       hair.primaryColor === color
                         ? 'border-white scale-110'
@@ -122,7 +122,7 @@ export const HairMakeupEditor: React.FC<HairMakeupEditorProps> = ({
                 <input
                   type="color"
                   value={hair.primaryColor}
-                  onChange={(e) => onHairChange(HairService.setPrimaryColor(hair, e.target.value))}
+                  onChange={(e) => updateHair(HairService.setPrimaryColor(hair, e.target.value))}
                   className="w-full h-8 rounded cursor-pointer"
                 />
               </div>
@@ -138,9 +138,9 @@ export const HairMakeupEditor: React.FC<HairMakeupEditorProps> = ({
                     checked={hair.highlights}
                     onChange={(e) => {
                       if (e.target.checked) {
-                        onHairChange(HairService.setHighlightColor(hair, '#FFD700', 50));
+                        updateHair(HairService.setHighlightColor(hair, '#FFD700', 50));
                       } else {
-                        onHairChange(HairService.removeHighlights(hair));
+                        updateHair(HairService.removeHighlights(hair));
                       }
                     }}
                     className="w-4 h-4"
@@ -156,7 +156,7 @@ export const HairMakeupEditor: React.FC<HairMakeupEditorProps> = ({
                         type="color"
                         value={hair.secondaryColor || '#FFD700'}
                         onChange={(e) =>
-                          onHairChange(
+                          updateHair(
                             HairService.setHighlightColor(hair, e.target.value, hair.highlightIntensity)
                           )
                         }
@@ -173,7 +173,7 @@ export const HairMakeupEditor: React.FC<HairMakeupEditorProps> = ({
                         max="100"
                         value={hair.highlightIntensity}
                         onChange={(e) =>
-                          onHairChange(
+                          updateHair(
                             HairService.setHighlightColor(
                               hair,
                               hair.secondaryColor || '#FFD700',
@@ -199,7 +199,7 @@ export const HairMakeupEditor: React.FC<HairMakeupEditorProps> = ({
                   <select
                     value={hair.texture}
                     onChange={(e) =>
-                      onHairChange(HairService.setTexture(hair, e.target.value as any))
+                      updateHair(HairService.setTexture(hair, e.target.value as any))
                     }
                     className="w-full px-2 py-1 bg-slate-800 border border-slate-700 rounded text-xs text-white"
                   >
@@ -220,7 +220,7 @@ export const HairMakeupEditor: React.FC<HairMakeupEditorProps> = ({
                     max="1.2"
                     step="0.1"
                     value={hair.length}
-                    onChange={(e) => onHairChange(HairService.setLength(hair, parseFloat(e.target.value)))}
+                    onChange={(e) => updateHair(HairService.setLength(hair, parseFloat(e.target.value)))}
                     className="w-full"
                   />
                 </div>
@@ -235,7 +235,7 @@ export const HairMakeupEditor: React.FC<HairMakeupEditorProps> = ({
                     max="1.3"
                     step="0.1"
                     value={hair.volume}
-                    onChange={(e) => onHairChange(HairService.setVolume(hair, parseFloat(e.target.value)))}
+                    onChange={(e) => updateHair(HairService.setVolume(hair, parseFloat(e.target.value)))}
                     className="w-full"
                   />
                 </div>
@@ -249,7 +249,7 @@ export const HairMakeupEditor: React.FC<HairMakeupEditorProps> = ({
                     min="0"
                     max="100"
                     value={hair.shine}
-                    onChange={(e) => onHairChange(HairService.setShine(hair, parseInt(e.target.value)))}
+                    onChange={(e) => updateHair(HairService.setShine(hair, parseInt(e.target.value)))}
                     className="w-full"
                   />
                 </div>
@@ -269,7 +269,7 @@ export const HairMakeupEditor: React.FC<HairMakeupEditorProps> = ({
                       <span className="w-3 h-3 rounded" style={{ backgroundColor: acc.color }} />
                       {acc.name}
                       <button
-                        onClick={() => onHairChange(HairService.removeAccessory(hair, i))}
+                        onClick={() => updateHair(HairService.removeAccessory(hair, i))}
                         className="text-slate-500 hover:text-red-500"
                       >
                         ✕
@@ -292,7 +292,7 @@ export const HairMakeupEditor: React.FC<HairMakeupEditorProps> = ({
                       <button
                         key={acc.id}
                         onClick={() => {
-                          onHairChange(HairService.addAccessory(hair, acc.id));
+                          updateHair(HairService.addAccessory(hair, acc.id));
                           setShowAccessories(false);
                         }}
                         className="w-full text-left px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-xs transition-colors flex items-center gap-2"
@@ -322,7 +322,7 @@ export const HairMakeupEditor: React.FC<HairMakeupEditorProps> = ({
                 {eyeColorPresets.map(color => (
                   <button
                     key={color}
-                    onClick={() => onEyesChange(FacialFeaturesService.setEyeColor(eyes, color))}
+                    onClick={() => updateEyes(FacialFeaturesService.setEyeColor(eyes, color))}
                     className={`w-6 h-6 rounded-full border-2 transition-all ${
                       eyes.primaryColor === color
                         ? 'border-white scale-110'
@@ -347,7 +347,7 @@ export const HairMakeupEditor: React.FC<HairMakeupEditorProps> = ({
                   step="0.1"
                   value={eyes.pupilSize}
                   onChange={(e) =>
-                    onEyesChange(FacialFeaturesService.setPupilSize(eyes, parseFloat(e.target.value)))
+                    updateEyes(FacialFeaturesService.setPupilSize(eyes, parseFloat(e.target.value)))
                   }
                   className="w-full"
                 />
@@ -359,7 +359,7 @@ export const HairMakeupEditor: React.FC<HairMakeupEditorProps> = ({
               <select
                 value={eyes.eyebrowStyle}
                 onChange={(e) =>
-                  onEyesChange(FacialFeaturesService.setEyebrowStyle(eyes, e.target.value))
+                  updateEyes(FacialFeaturesService.setEyebrowStyle(eyes, e.target.value))
                 }
                 className="w-full px-2 py-1 bg-slate-800 border border-slate-700 rounded text-xs text-white mb-2"
               >
@@ -379,7 +379,7 @@ export const HairMakeupEditor: React.FC<HairMakeupEditorProps> = ({
                   step="0.1"
                   value={eyes.eyebrowThickness}
                   onChange={(e) =>
-                    onEyesChange(
+                    updateEyes(
                       FacialFeaturesService.setEyebrowThickness(eyes, parseFloat(e.target.value))
                     )
                   }
@@ -399,7 +399,7 @@ export const HairMakeupEditor: React.FC<HairMakeupEditorProps> = ({
                 {lipColorPresets.map(color => (
                   <button
                     key={color}
-                    onClick={() => onLipsChange(FacialFeaturesService.setLipstickColor(lips, color))}
+                    onClick={() => updateLips(FacialFeaturesService.setLipstickColor(lips, color))}
                     className={`w-6 h-6 rounded border-2 transition-all ${
                       lips.color === color ? 'border-white scale-110' : 'border-slate-600'
                     }`}
@@ -414,7 +414,7 @@ export const HairMakeupEditor: React.FC<HairMakeupEditorProps> = ({
                   <select
                     value={lips.lipstickFinish}
                     onChange={(e) =>
-                      onLipsChange(
+                      updateLips(
                         FacialFeaturesService.setLipstickFinish(lips, e.target.value as any)
                       )
                     }
@@ -435,7 +435,7 @@ export const HairMakeupEditor: React.FC<HairMakeupEditorProps> = ({
                     max="100"
                     value={lips.gloss}
                     onChange={(e) =>
-                      onLipsChange(FacialFeaturesService.setLipGloss(lips, parseInt(e.target.value)))
+                      updateLips(FacialFeaturesService.setLipGloss(lips, parseInt(e.target.value)))
                     }
                     className="w-full"
                   />
@@ -450,9 +450,9 @@ export const HairMakeupEditor: React.FC<HairMakeupEditorProps> = ({
                   <button
                     key={i}
                     onClick={() => {
-                      onMakeupChange(preset.makeup);
+                      updateMakeup(preset.makeup as Makeup);
                       if (preset.makeup.lipstick) {
-                        onLipsChange(preset.makeup.lipstick);
+                        updateLips(preset.makeup.lipstick as Lips);
                       }
                     }}
                     className="w-full px-2 py-1 bg-slate-800 hover:bg-slate-700 rounded text-xs text-left transition-colors"

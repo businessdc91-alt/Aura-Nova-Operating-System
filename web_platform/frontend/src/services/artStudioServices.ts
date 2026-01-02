@@ -247,8 +247,8 @@ export class MotionCreatorService {
   }
 
   private static interpolate(
-    start?: { x: number; y: number },
-    end?: { x: number; y: number },
+    start: { x: number; y: number } | undefined,
+    end: { x: number; y: number } | undefined,
     progress: number
   ): { x: number; y: number } | undefined {
     if (!start || !end) return start || end;
@@ -259,12 +259,12 @@ export class MotionCreatorService {
   }
 
   private static interpolateNumber(
-    start?: number,
-    end?: number,
-    progress?: number
+    start: number | undefined,
+    end: number | undefined,
+    progress: number = 0
   ): number | undefined {
     if (start === undefined || end === undefined) return start || end;
-    return start + (end - start) * (progress || 0);
+    return start + (end - start) * progress;
   }
 
   private static generateAnimationCode(name: string, frames: AnimationFrame[]): string {
