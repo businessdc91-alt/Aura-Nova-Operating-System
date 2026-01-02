@@ -35,7 +35,7 @@ interface ToolCard {
   title: string;
   description: string;
   href: string;
-  icon: React.ComponentType<{ size?: number; className?: string }>;
+  icon: React.ComponentType<{ size?: string | number; className?: string }>;
   color: string;
   status: 'ready' | 'coming-soon' | 'beta';
 }
@@ -223,14 +223,14 @@ function ToolCardComponent({ tool }: { tool: ToolCard }) {
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
+    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 w-full max-w-full overflow-x-hidden">
       {/* Hero Section */}
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-aura-600/20 to-purple-600/20 blur-3xl" />
-        <div className="relative px-8 py-16 text-center">
+        <div className="relative px-4 sm:px-6 lg:px-8 py-16 text-center max-w-7xl mx-auto">
           <div className="flex items-center justify-center gap-3 mb-4">
             <Rocket size={48} className="text-aura-400" />
-            <h1 className="text-5xl font-black text-white">AuraNova Studios</h1>
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white">AuraNova Studios</h1>
           </div>
           <p className="text-xl text-slate-300 max-w-2xl mx-auto mb-8">
             Your all-in-one creative platform. Generate game code, design sprites,
@@ -269,7 +269,7 @@ export default function HomePage() {
       </div>
 
       {/* Main Content */}
-      <div className="px-8 pb-16">
+      <div className="px-4 sm:px-6 lg:px-8 pb-16 max-w-7xl mx-auto">
         {/* Creative Tools */}
         <section className="mb-16">
           <div className="flex items-center gap-3 mb-6">

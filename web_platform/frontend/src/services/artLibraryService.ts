@@ -177,11 +177,10 @@ export class ArtLibraryService {
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([this.STORE_NAMES.PIECES], 'readonly');
       const store = transaction.objectStore(this.STORE_NAMES.PIECES);
-      const index = store.index('public');
-      const request = index.getAll(true);
+      const request = store.getAll();
 
       request.onsuccess = () => {
-        const pieces = request.result;
+        const pieces = request.result.filter((p) => p.public);
         if (featured) {
           resolve(pieces.filter((p) => p.featured));
         } else {

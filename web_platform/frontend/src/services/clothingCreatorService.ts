@@ -69,6 +69,18 @@ export interface BodySize {
   shoulderWidth: number;
 }
 
+export interface Outfit {
+  id: string;
+  name: string;
+  itemIds: string[];
+  tags: string[];
+  createdAt: Date;
+  updatedAt: Date;
+  isPublic: boolean;
+  description?: string;
+  preview?: string;
+}
+
 export class ClothingCreatorService {
   private static DB_NAME = 'AuraClothingStudio';
   private static STORE_NAMES = {
@@ -599,6 +611,85 @@ export class ClothingCreatorService {
       const request = index.getAll(type);
 
       request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  // ============== OUTFIT MANAGEMENT ==============
+
+  /**
+   * Get all outfits
+   */
+  static async getAllOutfits(): Promise<Outfit[]> {
+    const db = await this.initializeDB();
+
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([this.STORE_NAMES.OUTFITS], 'readonly');
+      const store = transaction.objectStore(this.STORE_NAMES.OUTFITS);
+      const request = store.getAll();
+
+      request.onsuccess = () => resolve(request.result || []);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  /**
+   * Create a new outfit
+   */
+  static async createOutfit(outfit: Outfit): Promise<Outfit> {
+    const db = await this.initializeDB();
+
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([this.STORE_NAMES.OUTFITS], 'readwrite');
+      const store = transaction.objectStore(this.STORE_NAMES.OUTFITS);
+      const request = store.add(outfit);
+
+      request.onsuccess = () => resolve(outfit);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  /**
+   * Update an existing outfit
+   */
+  static async updateOutfit(outfitId: string, updates: Partial<Outfit>): Promise<Outfit> {
+    const db = await this.initializeDB();
+
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([this.STORE_NAMES.OUTFITS], 'readwrite');
+      const store = transaction.objectStore(this.STORE_NAMES.OUTFITS);
+      const getRequest = store.get(outfitId);
+
+      getRequest.onsuccess = () => {
+        const existing = getRequest.result;
+        if (!existing) {
+          reject(new Error('Outfit not found'));
+          return;
+        }
+
+        const updated = { ...existing, ...updates, updatedAt: new Date() };
+        const putRequest = store.put(updated);
+
+        putRequest.onsuccess = () => resolve(updated);
+        putRequest.onerror = () => reject(putRequest.error);
+      };
+
+      getRequest.onerror = () => reject(getRequest.error);
+    });
+  }
+
+  /**
+   * Delete an outfit
+   */
+  static async deleteOutfit(outfitId: string): Promise<void> {
+    const db = await this.initializeDB();
+
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([this.STORE_NAMES.OUTFITS], 'readwrite');
+      const store = transaction.objectStore(this.STORE_NAMES.OUTFITS);
+      const request = store.delete(outfitId);
+
+      request.onsuccess = () => resolve();
       request.onerror = () => reject(request.error);
     });
   }

@@ -63,15 +63,15 @@ const createInitialBoard = (): PieceType[][] => {
   return board;
 };
 
-const countPieces = (board: PieceType[][]): { red: number; black: number } => {
-  let red = 0, black = 0;
+const countPieces = (board: PieceType[][]): { redCount: number; blackCount: number } => {
+  let redCount = 0, blackCount = 0;
   for (const row of board) {
     for (const piece of row) {
-      if (piece?.startsWith('red')) red++;
-      if (piece?.startsWith('black')) black++;
+      if (piece?.startsWith('red')) redCount++;
+      if (piece?.startsWith('black')) blackCount++;
     }
   }
-  return { red, black };
+  return { redCount, blackCount };
 };
 
 const getPieceColor = (piece: PieceType): 'red' | 'black' | null => {
@@ -290,7 +290,7 @@ export const AICheckers: React.FC = () => {
       const counts = countPieces(newBoard);
       
       // Check for additional jumps (multi-jump)
-      let nextPlayer = prev.currentPlayer === 'red' ? 'black' : 'red';
+      let nextPlayer: 'red' | 'black' = prev.currentPlayer === 'red' ? 'black' : 'red';
       let additionalJumps: Move[] = [];
       
       if (move.isJump) {
@@ -307,10 +307,10 @@ export const AICheckers: React.FC = () => {
       let winner: 'red' | 'black' | 'draw' | null = null;
       let isGameOver = false;
 
-      if (counts.red === 0) {
+      if (counts.redCount === 0) {
         winner = 'black';
         isGameOver = true;
-      } else if (counts.black === 0) {
+      } else if (counts.blackCount === 0) {
         winner = 'red';
         isGameOver = true;
       } else {

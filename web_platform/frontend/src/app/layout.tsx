@@ -2,8 +2,7 @@ import type { Metadata } from 'next';
 import { Spline_Sans, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 import { Toaster } from 'react-hot-toast';
-import Navbar from '@/components/Navbar';
-import { AuraGuideChat } from '@/components/guide/AuraGuideChat';
+import LayoutWrapper from '@/components/LayoutWrapper';
 
 const display = Spline_Sans({ subsets: ['latin'], weight: ['400', '500', '600', '700'] });
 const mono = JetBrains_Mono({ subsets: ['latin'], weight: ['400', '500', '600', '700'], variable: '--font-mono' });
@@ -20,14 +19,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="dark">
-      <body className={`${display.className} ${mono.variable} bg-slate-950 text-white`}>
-        <Navbar />
-        <main className="pt-16">
+      <body className={`${display.className} ${mono.variable} bg-slate-950 text-white min-h-screen overflow-x-hidden`}>
+        <LayoutWrapper>
           {children}
-        </main>
-        
-        {/* Aura Guide - Floating Chat Assistant */}
-        <AuraGuideChat variant="floating" />
+        </LayoutWrapper>
         
         <Toaster
           position="bottom-right"

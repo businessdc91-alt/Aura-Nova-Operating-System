@@ -18,7 +18,6 @@ import {
   patchUserSettings,
   getLocalSettings,
   saveLocalSettings,
-  WallpaperOption,
 } from '@/services/userSettingsService';
 import { MessengerApp } from '@/components/os/MessengerApp';
 

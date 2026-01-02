@@ -62,7 +62,6 @@ export const DesktopEnvironment: React.FC<DesktopEnvironmentProps> = ({
       minHeight: 300,
       isMinimized: false,
       isMaximized: false,
-      isActive: true,
     });
     setShowStartMenu(false);
   };

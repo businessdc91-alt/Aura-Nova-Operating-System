@@ -200,7 +200,7 @@ function CreatorStudioHeader() {
             <div className="flex items-center gap-2 px-3 py-2 bg-slate-800/50 rounded-lg border border-slate-700">
               <Monitor className="w-4 h-4 text-purple-400" />
               <div className="flex flex-col gap-1">
-                <span className="text-sm font-medium">{activeModel.friendlyName}</span>
+                <span className="text-sm font-medium">{activeModel.name}</span>
                 <span className={`text-xs flex items-center gap-1 ${getHealthColor()}`}>
                   <span>{getHealthIcon()}</span>
                   {health ? (
@@ -244,7 +244,7 @@ function CreatorStudioHeader() {
                         }`}
                       >
                         <div className="flex items-center justify-between">
-                          <span className="font-medium">{model.friendlyName}</span>
+                          <span className="font-medium">{model.name}</span>
                           {activeModel?.id === model.id && (
                             <CheckCircle className="w-4 h-4 text-green-500" />
                           )}
@@ -358,7 +358,7 @@ export default function CreatorStudioPage() {
     setState((prev) => ({ ...prev, isGenerating: true }));
     
     const generatingToast = toast.loading(
-      `Generating code with ${activeModel.friendlyName}...`
+      `Generating code with ${activeModel.name}...`
     );
 
     try {

@@ -2,7 +2,10 @@
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { auraGuide, AuraGuideResponse, PLATFORM_FEATURES, FeatureGuide } from '@/services/auraGuideService';
+import { auraGuide, GuideResponse, PLATFORM_FEATURES, FeatureGuide, TutorialStep } from '@/services/auraGuideService';
+
+// Alias for backward compatibility
+type AuraGuideResponse = GuideResponse;
 
 // ============================================================================
 // AURA GUIDE HOOK - Easy access to guide functionality throughout the app
@@ -28,7 +31,7 @@ export interface AuraGuideHookReturn {
 
   // Recommendations
   getRecommendations: () => FeatureGuide[];
-  getQuickStart: () => string;
+  getQuickStart: () => GuideResponse;
 
   // Context
   currentRoute: string;
@@ -128,7 +131,7 @@ export function useAuraGuide(options: UseAuraGuideOptions = {}): AuraGuideHookRe
   }, [getCurrentFeature, getRelatedFeatures]);
 
   // Get quick start message
-  const getQuickStart = useCallback((): string => {
+  const getQuickStart = useCallback((): GuideResponse => {
     return auraGuide.getQuickStartGuide();
   }, []);
 
@@ -211,7 +214,7 @@ export interface ContextualHelpItem {
 export function useContextualHelp(): {
   helpItems: ContextualHelpItem[];
   currentFeature: FeatureGuide | null;
-  tutorials: string[];
+  tutorials: TutorialStep[];
   externalGuides: { title: string; description: string }[];
 } {
   const { getCurrentFeature, getRelatedFeatures } = useAuraGuide();
@@ -243,11 +246,11 @@ export function useContextualHelp(): {
     return items;
   }, [currentFeature, getRelatedFeatures]);
 
-  const tutorials = useMemo((): string[] => {
+  const tutorials = useMemo(() => {
     return currentFeature?.tutorials || [];
   }, [currentFeature]);
 
-  const externalGuides = useMemo((): { title: string; description: string }[] => {
+  const externalGuides = useMemo(() => {
     if (!currentFeature?.externalIntegrations) return [];
     
     return currentFeature.externalIntegrations.map(ext => ({

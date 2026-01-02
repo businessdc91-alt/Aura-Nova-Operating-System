@@ -31,7 +31,7 @@ export default function AvatarBuilderPage() {
 
   // Avatar customization
   const [facialFeatures, setFacialFeatures] = useState<FacialFeatures>(FacialFeaturesService.createDefaultFeatures());
-  const [avatarHair, setAvatarHair] = useState(HairService.createHair('long-straight', '#8B4513'));
+  const [avatarHair, setAvatarHair] = useState(HairService.createHair('long-straight'));
 
   // Body Customization
   const [bodySettings, setBodySettings] = useState<Partial<AvatarBody>>({
