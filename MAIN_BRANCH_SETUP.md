@@ -5,7 +5,7 @@ This repository has been configured to work with the `main` branch as the primar
 ## Configuration Details
 
 - **Local Main Branch**: Updated with all changes
-- **Tracking**: origin/main  
+- **Tracking**: origin/main
 - **Setup Date**: January 2, 2026
 
 ## Pull Request Workflow
