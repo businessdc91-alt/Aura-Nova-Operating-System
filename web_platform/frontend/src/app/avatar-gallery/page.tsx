@@ -58,10 +58,11 @@ export default function AvatarGalleryPage() {
     // Sort
     switch (sortBy) {
       case 'newest':
-        filtered.sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+        filtered.sort((a, b) => (b.metadata?.createdAt?.getTime() || 0) - (a.metadata?.createdAt?.getTime() || 0));
         break;
       case 'popular':
-        filtered.sort((a, b) => ((b.views || 0) - (a.views || 0)));
+        // Views not implemented yet, sort by name for now
+        filtered.sort((a, b) => a.name.localeCompare(b.name));
         break;
       case 'name':
         filtered.sort((a, b) => a.name.localeCompare(b.name));

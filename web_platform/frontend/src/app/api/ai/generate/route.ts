@@ -20,8 +20,16 @@ export async function POST(req: NextRequest) {
     }
 
     // Process request
-    const response = await handleAIRequest(req, aiRequest);
-    metricsCollector.recordRequest(response);
+    const response = await handleAIRequest(aiRequest, async (req) => {
+      // Simple handler that returns the request for now
+      // In production, this would call the actual AI service
+      return {
+        modelUsed: 'gemini-1.5-pro',
+        content: '// Generated code would go here',
+        tokensUsed: 0,
+        cost: 0,
+      };
+    });
 
     return NextResponse.json(response);
   } catch (error: any) {

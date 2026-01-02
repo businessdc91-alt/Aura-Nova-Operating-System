@@ -174,12 +174,29 @@ export default function IntegratedArtStudio() {
     setIsProcessing(true);
 
     try {
+      // Map complexity number to string
+      const complexityMap: Record<number, 'simple' | 'moderate' | 'complex'> = {
+        1: 'simple', 2: 'simple', 3: 'simple',
+        4: 'moderate', 5: 'moderate', 6: 'moderate', 7: 'moderate',
+        8: 'complex', 9: 'complex', 10: 'complex'
+      };
+
+      // Map color scheme names to actual color arrays
+      const colorSchemes: Record<string, string[]> = {
+        vibrant: ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8'],
+        pastel: ['#FFB6D9', '#C5A3FF', '#A8E6CF', '#FFD3B6', '#FFAAA5'],
+        monochrome: ['#1a1a1a', '#404040', '#666666', '#8c8c8c', '#b3b3b3'],
+        earth: ['#8B4513', '#A0522D', '#D2691E', '#CD853F', '#DEB887'],
+      };
+
       const imageData = await ProceduralGeneratorService.generateArt({
         style: proceduralSettings.style,
-        width: proceduralSettings.width,
-        height: proceduralSettings.height,
-        complexity: proceduralSettings.complexity,
-        colorScheme: proceduralSettings.colorScheme,
+        dimensions: {
+          width: proceduralSettings.width,
+          height: proceduralSettings.height,
+        },
+        complexity: complexityMap[proceduralSettings.complexity] || 'moderate',
+        colorScheme: colorSchemes[proceduralSettings.colorScheme] || colorSchemes.vibrant,
         seed: proceduralSettings.seed,
       });
 
@@ -194,6 +211,11 @@ export default function IntegratedArtStudio() {
         tags: [proceduralSettings.style, 'procedural', proceduralSettings.colorScheme],
         thumbnail: imageData,
         fullImage: imageData,
+        exportFormats: {
+          png: imageData,
+        },
+        public: false,
+        featured: false,
       });
 
       toast.success('Procedural art generated!', { id: loadingToast });
@@ -235,6 +257,11 @@ export default function IntegratedArtStudio() {
         tags: prompt('Add tags (comma-separated):')?.split(',').map(t => t.trim()) || [],
         thumbnail: processedImage || uploadedImage || '',
         fullImage: processedImage || uploadedImage || '',
+        exportFormats: {
+          png: processedImage || uploadedImage || '',
+        },
+        public: false,
+        featured: false,
       });
 
       toast.success('Artwork saved to library!', { id: loadingToast });
@@ -566,7 +593,7 @@ export default function IntegratedArtStudio() {
                     <label className="text-sm text-slate-400 block mb-2">Style</label>
                     <select
                       value={proceduralSettings.style}
-                      onChange={(e) => setProcedural Settings({ ...proceduralSettings, style: e.target.value as any })}
+                      onChange={(e) => setProceduralSettings({ ...proceduralSettings, style: e.target.value as any })}
                       className="w-full px-3 py-2 bg-slate-800 rounded border border-slate-700 text-white"
                     >
                       <option value="geometric">Geometric</option>
@@ -581,7 +608,7 @@ export default function IntegratedArtStudio() {
                     <label className="text-sm text-slate-400 block mb-2">Color Scheme</label>
                     <select
                       value={proceduralSettings.colorScheme}
-                      onChange={(e) => setProcedural Settings({ ...proceduralSettings, colorScheme: e.target.value })}
+                      onChange={(e) => setProceduralSettings({ ...proceduralSettings, colorScheme: e.target.value })}
                       className="w-full px-3 py-2 bg-slate-800 rounded border border-slate-700 text-white"
                     >
                       <option value="vibrant">Vibrant</option>
@@ -598,7 +625,7 @@ export default function IntegratedArtStudio() {
                       min="1"
                       max="10"
                       value={proceduralSettings.complexity}
-                      onChange={(e) => setProcedural Settings({ ...proceduralSettings, complexity: parseInt(e.target.value) })}
+                      onChange={(e) => setProceduralSettings({ ...proceduralSettings, complexity: parseInt(e.target.value) })}
                       className="w-full"
                     />
                   </div>
@@ -609,7 +636,7 @@ export default function IntegratedArtStudio() {
                       <input
                         type="number"
                         value={proceduralSettings.width}
-                        onChange={(e) => setProcedural Settings({ ...proceduralSettings, width: parseInt(e.target.value) })}
+                        onChange={(e) => setProceduralSettings({ ...proceduralSettings, width: parseInt(e.target.value) })}
                         className="w-full px-3 py-2 bg-slate-800 rounded border border-slate-700 text-white text-sm"
                       />
                     </div>
@@ -618,14 +645,14 @@ export default function IntegratedArtStudio() {
                       <input
                         type="number"
                         value={proceduralSettings.height}
-                        onChange={(e) => setProcedural Settings({ ...proceduralSettings, height: parseInt(e.target.value) })}
+                        onChange={(e) => setProceduralSettings({ ...proceduralSettings, height: parseInt(e.target.value) })}
                         className="w-full px-3 py-2 bg-slate-800 rounded border border-slate-700 text-white text-sm"
                       />
                     </div>
                   </div>
 
                   <button
-                    onClick={() => setProcedural Settings({ ...proceduralSettings, seed: Math.random() })}
+                    onClick={() => setProceduralSettings({ ...proceduralSettings, seed: Math.random() })}
                     className="w-full px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg font-semibold transition-colors text-sm"
                   >
                     🎲 Randomize

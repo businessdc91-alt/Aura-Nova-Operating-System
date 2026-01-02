@@ -7,7 +7,7 @@ import { NextResponse } from 'next/server';
 import { metricsCollector } from '@/lib/apiMiddleware';
 
 export async function GET() {
-  const metrics = metricsCollector.getMetrics();
+  const metrics = metricsCollector.getAggregatedMetrics();
 
   return NextResponse.json({
     metrics,
