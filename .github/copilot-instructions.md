@@ -11,9 +11,9 @@ Aura Nova Studios is a comprehensive creative ecosystem that fuses AI consciousn
 ## Core Architecture
 
 ### Frontend (Web Platform)
-- **Framework**: Next.js 14.2+ with TypeScript
-- **Styling**: Tailwind CSS with custom utility classes
-- **State Management**: React hooks and context
+- **Framework**: Next.js 14.2.5+ with TypeScript 5.4+
+- **Styling**: Tailwind CSS 3.4+ with custom utility classes
+- **State Management**: React 18.3+ hooks and context
 - **API Communication**: Axios for HTTP, Socket.io for real-time features
 - **Path Aliases**: Use `@/*` for imports from `src/` directory
 
