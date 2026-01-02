@@ -33,7 +33,7 @@ jobs:
           cache-dependency-path: 'web_platform/frontend/package-lock.json'
 
       - name: Setup Pages
-        uses: actions/configure-pages@v3
+        uses: actions/configure-pages@v5
 
       - name: Install Dependencies
         working-directory: web_platform/frontend
@@ -44,7 +44,7 @@ jobs:
         run: npm run build
 
       - name: Upload Artifact
-        uses: actions/upload-pages-artifact@v2
+        uses: actions/upload-pages-artifact@v3
         with:
           path: 'web_platform/frontend/.next/out'
 
@@ -59,4 +59,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v2
+        uses: actions/deploy-pages@v4
