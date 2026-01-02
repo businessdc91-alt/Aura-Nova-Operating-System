@@ -88,9 +88,7 @@ export default function AvatarGalleryPage() {
     if (!newName) return;
 
     try {
-      const cloned = await AvatarService.cloneAvatar(avatar.id);
-      cloned.name = newName;
-      await AvatarService.updateAvatar(cloned.id, cloned);
+      const cloned = await AvatarService.cloneAvatar(avatar.id, newName);
       toast.success('Avatar cloned! Go to builder to customize it.');
     } catch (error) {
       toast.error('Failed to clone avatar');
@@ -228,7 +226,7 @@ export default function AvatarGalleryPage() {
                   <h3 className="font-semibold text-sm mb-1">{avatar.name}</h3>
                   <div className="flex items-center justify-between text-xs text-slate-400">
                     <span>{avatar.body.bodyType}</span>
-                    <span className="text-slate-600">{avatar.views || 0} views</span>
+                    <span className="text-slate-600">{avatar.public ? 'Public' : 'Private'}</span>
                   </div>
 
                   <div className="mt-3 pt-3 border-t border-slate-800 flex gap-1 text-xs">
@@ -299,8 +297,8 @@ export default function AvatarGalleryPage() {
                   </div>
 
                   <div>
-                    <h3 className="text-xs text-slate-400 mb-1">Views</h3>
-                    <p className="font-semibold">{selectedAvatar.views || 0}</p>
+                    <h3 className="text-xs text-slate-400 mb-1">Status</h3>
+                    <p className="font-semibold">{selectedAvatar.public ? 'Public' : 'Private'}</p>
                   </div>
 
                   <div className="pt-4 flex gap-2">

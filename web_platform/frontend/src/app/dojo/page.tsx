@@ -31,10 +31,10 @@ export default function DojoPage() {
 
     await generateGame({
       title: formData.title,
-      prompt: formData.prompt,
+      description: formData.prompt,
       complexity: formData.complexity,
       engine: formData.engine,
-      graphicsStyle: formData.graphicsStyle,
+      graphics: formData.graphicsStyle,
     });
 
     setTab('viewer');
