@@ -93,6 +93,6 @@ private/
 .env.*.local
 
 # Generated UE project files
-GameProject/
-c:*
-*OneDrive*
+# Ignore Windows absolute paths that may be created by scripts
+c:\*
+/c:\*

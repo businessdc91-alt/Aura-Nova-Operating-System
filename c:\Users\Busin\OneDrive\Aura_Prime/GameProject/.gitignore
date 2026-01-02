@@ -1,0 +1,36 @@
+
+# Unreal Engine
+Binaries/
+Intermediate/
+Saved/
+.vs/
+*.VC.db
+*.VC.db-shm
+*.VC.db-wal
+
+# Build artifacts
+*.o
+*.a
+*.lib
+*.so
+*.dylib
+
+# Generated files
+Plugins/*/Intermediate/
+Plugins/*/Binaries/
+
+# IDE
+.idea/
+.vscode/
+*.code-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.env
+venv/
