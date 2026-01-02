@@ -61,7 +61,7 @@ export default function OutfitManagerPage() {
         isPublic: false,
       };
 
-      const created = await ClothingCreatorService.createOutfit(newOutfit);
+      const created = await ClothingCreatorService.saveOutfit(newOutfit);
       setOutfits([...outfits, created as OutfitWithClothing]);
       setCurrentOutfit(created as OutfitWithClothing);
       setOutfitName('');
@@ -121,7 +121,7 @@ export default function OutfitManagerPage() {
         isPublic: false,
       };
 
-      const created = await ClothingCreatorService.createOutfit(duplicate);
+      const created = await ClothingCreatorService.saveOutfit(duplicate);
       setOutfits([...outfits, created as OutfitWithClothing]);
       toast.success('Outfit duplicated!');
     } catch (error) {

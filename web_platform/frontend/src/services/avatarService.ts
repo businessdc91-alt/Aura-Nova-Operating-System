@@ -188,10 +188,12 @@ export class AvatarService {
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([this.STORE_NAMES.AVATARS], 'readonly');
       const store = transaction.objectStore(this.STORE_NAMES.AVATARS);
-      const index = store.index('public');
-      const request = index.getAll(true);
+      const request = store.getAll();
 
-      request.onsuccess = () => resolve(request.result);
+      request.onsuccess = () => {
+        const allAvatars = request.result as Avatar[];
+        resolve(allAvatars.filter(avatar => avatar.public === true));
+      };
       request.onerror = () => reject(request.error);
     });
   }
@@ -251,9 +253,10 @@ export class AvatarService {
     const avatar = await this.getAvatar(avatarId);
     if (!avatar) throw new Error('Avatar not found');
 
-    const validTypes = ['top', 'bottom', 'shoes', 'coat', 'hat'];
-    if (validTypes.includes(clothingType)) {
-      avatar.clothingLayers[clothingType as keyof typeof avatar.clothingLayers] = clothingItemId;
+    const validTypes = ['top', 'bottom', 'shoes', 'coat', 'hat'] as const;
+    type ClothingKey = 'top' | 'bottom' | 'shoes' | 'coat' | 'hat';
+    if (validTypes.includes(clothingType as ClothingKey)) {
+      (avatar.clothingLayers as Record<string, string | string[] | undefined>)[clothingType] = clothingItemId;
     } else if (clothingType === 'accessory') {
       avatar.clothingLayers.accessories.push(clothingItemId);
     }
@@ -275,9 +278,10 @@ export class AvatarService {
     if (clothingType === 'accessory' && clothingItemId) {
       avatar.clothingLayers.accessories = avatar.clothingLayers.accessories.filter(id => id !== clothingItemId);
     } else {
-      const validTypes = ['top', 'bottom', 'shoes', 'coat', 'hat'];
-      if (validTypes.includes(clothingType)) {
-        avatar.clothingLayers[clothingType as keyof typeof avatar.clothingLayers] = undefined;
+      const validTypes = ['top', 'bottom', 'shoes', 'coat', 'hat'] as const;
+      type ClothingKey = 'top' | 'bottom' | 'shoes' | 'coat' | 'hat';
+      if (validTypes.includes(clothingType as ClothingKey)) {
+        (avatar.clothingLayers as Record<string, string | string[] | undefined>)[clothingType] = undefined;
       }
     }
 

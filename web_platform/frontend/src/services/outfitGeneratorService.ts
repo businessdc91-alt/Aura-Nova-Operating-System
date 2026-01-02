@@ -239,9 +239,9 @@ export class OutfitGeneratorService {
    * Match clothing item to style profile
    */
   private static matchesProfile(item: ClothingItem, profile: StyleProfile): boolean {
-    // Check if any of the item's colors match the profile palette
-    const colorMatch = item.colors.some(color =>
-      profile.colorPalette.some(palColor => this.colorSimilarity(color, palColor) > 0.6)
+    // Check if the item's color matches the profile palette
+    const colorMatch = profile.colorPalette.some(palColor => 
+      this.colorSimilarity(item.baseColor, palColor) > 0.6
     );
 
     return colorMatch || Math.random() > 0.3; // 70% baseline match
@@ -272,17 +272,13 @@ export class OutfitGeneratorService {
     let totalScore = 0;
     for (let i = 0; i < items.length; i++) {
       for (let j = i + 1; j < items.length; j++) {
-        const sim = Math.max(
-          ...items[i].colors.map(c1 =>
-            Math.max(...items[j].colors.map(c2 => this.colorSimilarity(c1, c2)))
-          )
-        );
+        const sim = this.colorSimilarity(items[i].baseColor, items[j].baseColor);
         totalScore += sim;
       }
     }
 
     const maxPairs = (items.length * (items.length - 1)) / 2;
-    return Math.round((totalScore / maxPairs) * 100);
+    return maxPairs > 0 ? Math.round((totalScore / maxPairs) * 100) : 0;
   }
 
   /**
@@ -298,8 +294,8 @@ export class OutfitGeneratorService {
       }
 
       // Check color alignment
-      const colorMatch = item.colors.some(color =>
-        profile.colorPalette.some(palColor => this.colorSimilarity(color, palColor) > 0.7)
+      const colorMatch = profile.colorPalette.some(palColor => 
+        this.colorSimilarity(item.baseColor, palColor) > 0.7
       );
       if (colorMatch) {
         matchCount += 0.5;
@@ -313,11 +309,9 @@ export class OutfitGeneratorService {
    * Calculate color score for item
    */
   private static calculateColorScore(item: ClothingItem, profile: StyleProfile): number {
-    const matches = item.colors.map(color =>
-      Math.max(...profile.colorPalette.map(palColor => this.colorSimilarity(color, palColor)))
+    return Math.max(
+      ...profile.colorPalette.map(palColor => this.colorSimilarity(item.baseColor, palColor))
     );
-
-    return Math.max(...matches);
   }
 
   /**

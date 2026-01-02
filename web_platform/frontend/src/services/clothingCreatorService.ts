@@ -213,10 +213,12 @@ export class ClothingCreatorService {
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([this.STORE_NAMES.ITEMS], 'readonly');
       const store = transaction.objectStore(this.STORE_NAMES.ITEMS);
-      const index = store.index('public');
-      const request = index.getAll(true);
+      const request = store.getAll();
 
-      request.onsuccess = () => resolve(request.result);
+      request.onsuccess = () => {
+        const allItems = request.result as ClothingItem[];
+        resolve(allItems.filter(item => item.public === true));
+      };
       request.onerror = () => reject(request.error);
     });
   }
@@ -634,9 +636,9 @@ export class ClothingCreatorService {
   }
 
   /**
-   * Create a new outfit
+   * Save a new outfit to storage
    */
-  static async createOutfit(outfit: Outfit): Promise<Outfit> {
+  static async saveOutfit(outfit: Outfit): Promise<Outfit> {
     const db = await this.initializeDB();
 
     return new Promise((resolve, reject) => {
