@@ -91,3 +91,8 @@ private/
 .vercel/
 .env.local
 .env.*.local
+
+# Generated UE project files
+GameProject/
+c:*
+*OneDrive*
