@@ -61,6 +61,8 @@ export default function AvatarGalleryPage() {
         filtered.sort((a, b) => (b.metadata?.createdAt?.getTime() || 0) - (a.metadata?.createdAt?.getTime() || 0));
         break;
       case 'popular':
+        // Views not implemented yet, sort by name for now
+        filtered.sort((a, b) => a.name.localeCompare(b.name));
         filtered.sort((a, b) => (((b as any).views || 0) - ((a as any).views || 0)));
         break;
       case 'name':

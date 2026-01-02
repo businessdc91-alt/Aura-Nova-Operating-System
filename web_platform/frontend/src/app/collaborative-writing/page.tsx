@@ -25,6 +25,9 @@ export default function CollaborativeWritingPage() {
     const newSession = CollaborativeWritingService.createSession(
       `${vibe.name} Writing Session`,
       `Let's write together in a ${vibe.name} atmosphere`,
+      'current-user', // creator
+      vibe.name as unknown as WritingVibe,
+      'Creative Writing', // theme
       'You', // creator
       vibe, // the full vibe object
       themes[0] || 'general', // theme
@@ -214,6 +217,7 @@ export default function CollaborativeWritingPage() {
                         <h3 className="font-bold mb-1">{prompt.title}</h3>
                         <p className="text-sm text-slate-400 mb-2">{prompt.description}</p>
                       </div>
+                      <span className="text-2xl">📝</span>
                       <span className="text-2xl">{prompt.vibe?.emoji || '📝'}</span>
                     </div>
                     <p className="text-sm italic text-slate-300 mb-3">"{prompt.starter}"</p>
@@ -225,6 +229,7 @@ export default function CollaborativeWritingPage() {
                         ⏱️ {prompt.timeLimit || 30} min
                       </span>
                       <span className="px-2 py-1 bg-slate-800 rounded">
+                        🎯 {String(prompt.vibe)}
                         🎯 {prompt.vibe?.name || 'General'}
                       </span>
                     </div>
@@ -248,6 +253,7 @@ export default function CollaborativeWritingPage() {
                 <div className="space-y-2 text-sm mb-4">
                   <div className="flex justify-between">
                     <span className="text-slate-400">Vibe</span>
+                    <span className="font-semibold">{String(currentSession.vibe)}</span>
                     <span className="font-semibold">{currentSession.vibe?.name || 'Unknown'}</span>
                   </div>
                   <div className="flex justify-between">
@@ -416,6 +422,7 @@ export default function CollaborativeWritingPage() {
                       <p className="text-sm text-slate-400 mb-2">{session.description}</p>
                       <div className="flex gap-2 flex-wrap">
                         <span className="px-2 py-1 bg-slate-800 rounded text-xs">
+                          {String(session.vibe)}
                           {session.vibe?.name || 'Unknown'}
                         </span>
                         <span className="px-2 py-1 bg-slate-800 rounded text-xs">

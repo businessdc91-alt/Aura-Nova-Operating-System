@@ -174,6 +174,29 @@ export default function IntegratedArtStudio() {
     setIsProcessing(true);
 
     try {
+      // Map complexity number to string
+      const complexityMap: Record<number, 'simple' | 'moderate' | 'complex'> = {
+        1: 'simple', 2: 'simple', 3: 'simple',
+        4: 'moderate', 5: 'moderate', 6: 'moderate', 7: 'moderate',
+        8: 'complex', 9: 'complex', 10: 'complex'
+      };
+
+      // Map color scheme names to actual color arrays
+      const colorSchemes: Record<string, string[]> = {
+        vibrant: ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8'],
+        pastel: ['#FFB6D9', '#C5A3FF', '#A8E6CF', '#FFD3B6', '#FFAAA5'],
+        monochrome: ['#1a1a1a', '#404040', '#666666', '#8c8c8c', '#b3b3b3'],
+        earth: ['#8B4513', '#A0522D', '#D2691E', '#CD853F', '#DEB887'],
+      };
+
+      const imageData = await ProceduralGeneratorService.generateArt({
+        style: proceduralSettings.style,
+        dimensions: {
+          width: proceduralSettings.width,
+          height: proceduralSettings.height,
+        },
+        complexity: complexityMap[proceduralSettings.complexity] || 'moderate',
+        colorScheme: colorSchemes[proceduralSettings.colorScheme] || colorSchemes.vibrant,
       const imageData = ProceduralGeneratorService.generateArt({
         style: proceduralSettings.style,
         dimensions: { width: proceduralSettings.width, height: proceduralSettings.height },
@@ -193,6 +216,9 @@ export default function IntegratedArtStudio() {
         tags: [proceduralSettings.style, 'procedural', ...proceduralSettings.colorScheme],
         thumbnail: imageData,
         fullImage: imageData,
+        exportFormats: {
+          png: imageData,
+        },
         exportFormats: { png: imageData },
         public: false,
         featured: false,
@@ -237,6 +263,9 @@ export default function IntegratedArtStudio() {
         tags: prompt('Add tags (comma-separated):')?.split(',').map(t => t.trim()) || [],
         thumbnail: processedImage || uploadedImage || '',
         fullImage: processedImage || uploadedImage || '',
+        exportFormats: {
+          png: processedImage || uploadedImage || '',
+        },
         exportFormats: { png: processedImage || uploadedImage || '' },
         public: false,
         featured: false,
@@ -585,6 +614,8 @@ export default function IntegratedArtStudio() {
                   <div>
                     <label className="text-sm text-slate-400 block mb-2">Color Scheme</label>
                     <select
+                      value={proceduralSettings.colorScheme}
+                      onChange={(e) => setProceduralSettings({ ...proceduralSettings, colorScheme: e.target.value })}
                       value={proceduralSettings.colorScheme[0]}
                       onChange={(e) => setProceduralSettings({ ...proceduralSettings, colorScheme: [e.target.value] })}
                       className="w-full px-3 py-2 bg-slate-800 rounded border border-slate-700 text-white"
@@ -600,13 +631,9 @@ export default function IntegratedArtStudio() {
                     <label className="text-sm text-slate-400 block mb-2">Complexity: {proceduralSettings.complexity}</label>
                     <select
                       value={proceduralSettings.complexity}
-                      onChange={(e) => setProceduralSettings({ ...proceduralSettings, complexity: e.target.value as 'simple' | 'moderate' | 'complex' })}
-                      className="w-full px-3 py-2 bg-slate-800 rounded border border-slate-700 text-white text-sm"
-                    >
-                      <option value="simple">Simple</option>
-                      <option value="moderate">Moderate</option>
-                      <option value="complex">Complex</option>
-                    </select>
+                      onChange={(e) => setProceduralSettings({ ...proceduralSettings, complexity: parseInt(e.target.value) })}
+                      className="w-full"
+                    />
                   </div>
 
                   <div className="grid grid-cols-2 gap-2">
