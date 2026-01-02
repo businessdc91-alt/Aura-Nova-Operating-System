@@ -135,6 +135,7 @@ def main():
     }
     
     state_path = Path(workspace) / 'AURA_NOVA_STUDIOS' / 'bootstrap_state.json'
+    state_path.parent.mkdir(parents=True, exist_ok=True)
     with open(state_path, 'w') as f:
         json.dump(bootstrap_state, f, indent=2)
     

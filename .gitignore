@@ -91,3 +91,7 @@ private/
 .vercel/
 .env.local
 .env.*.local
+
+# Generated UE project files
+# Ignore Windows absolute paths that may be created by scripts on Linux
+c:*
