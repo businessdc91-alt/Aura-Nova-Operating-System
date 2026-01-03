@@ -1,9 +1,11 @@
 // Firebase Cloud Functions integration for existing backend
 // Add to your src/index.ts or create separate module
 
-import * as functions from 'firebase-functions';
+import { onRequest } from 'firebase-functions/v2/https';
+import { onDocumentCreated } from 'firebase-functions/v2/firestore';
+import { onSchedule } from 'firebase-functions/v2/scheduler';
 import * as admin from 'firebase-admin';
-import * as cors from 'cors';
+import cors from 'cors';
 import express from 'express';
 
 admin.initializeApp();
@@ -136,45 +138,46 @@ app.post('/api/analytics', async (req, res) => {
 /**
  * Firestore Trigger: Auto-index popular content
  */
-export const onMessageCreated = functions.firestore
-  .document('conversations/{conversationId}/messages/{messageId}')
-  .onCreate(async (snap, context) => {
+export const onMessageCreated = onDocumentCreated(
+  'conversations/{conversationId}/messages/{messageId}',
+  async (event) => {
+    const snap = event.data;
+    if (!snap) return;
     const messageData = snap.data();
-    console.log('New message:', context.params.messageId);
+    console.log('New message:', event.params.messageId);
 
     // Auto-index, increment counters, trigger notifications, etc.
-  });
+  }
+);
 
 /**
  * Firestore Trigger: Cleanup old data
  */
-export const cleanupOldData = functions.pubsub
-  .schedule('0 3 * * *') // Daily at 3 AM
-  .onRun(async (context) => {
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+export const cleanupOldData = onSchedule('0 3 * * *', async () => {
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    try {
-      const snapshot = await admin
-        .firestore()
-        .collection('messages')
-        .where('timestamp', '<', thirtyDaysAgo)
-        .get();
+  try {
+    const snapshot = await admin
+      .firestore()
+      .collection('messages')
+      .where('timestamp', '<', thirtyDaysAgo)
+      .get();
 
-      const batch = admin.firestore().batch();
+    const batch = admin.firestore().batch();
 
-      snapshot.docs.forEach((doc) => {
-        batch.delete(doc.ref);
-      });
+    snapshot.docs.forEach((doc) => {
+      batch.delete(doc.ref);
+    });
 
-      await batch.commit();
-      console.log(`Deleted ${snapshot.docs.length} old messages`);
-    } catch (error) {
-      console.error('Cleanup error:', error);
-    }
-  });
+    await batch.commit();
+    console.log(`Deleted ${snapshot.docs.length} old messages`);
+  } catch (error) {
+    console.error('Cleanup error:', error);
+  }
+});
 
 /**
  * Export the Express app as a Cloud Function
  */
-export const api = functions.https.onRequest(app);
+export const api = onRequest(app);

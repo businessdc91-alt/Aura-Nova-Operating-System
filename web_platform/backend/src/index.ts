@@ -8,7 +8,10 @@ import { createServer } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 import artRoutes from './routes/art';
 import userSettingsRoutes from './routes/userSettings';
-import { io as wsIO } from './websocket/server';
+
+// Conditionally import websocket to avoid auto-start
+let wsIO: SocketIOServer | null = null;
+let startWebSocketServer: (() => void) | null = null;
 
 // Load environment variables
 dotenv.config();
@@ -49,7 +52,8 @@ app.use('/api/settings', userSettingsRoutes);
 
 // ============== WEBSOCKET ==============
 
-const io = wsIO;
+// WebSocket io will be initialized when server starts
+let io: SocketIOServer | null = null;
 
 // ============== ERROR HANDLING ==============
 
@@ -73,11 +77,19 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
 
 // ============== SERVER START ==============
 
-httpServer.listen(PORT, () => {
-  console.log(`🚀 AuraNova Backend Server running on port ${PORT}`);
-  console.log(`📡 CORS enabled for ${FRONTEND_URL}`);
-  console.log(`🔗 WebSocket ready for connections`);
-});
+// Only start server if not being imported (for Firebase Functions compatibility)
+if (require.main === module) {
+  // Dynamically import websocket server only when running standalone
+  const wsModule = require('./websocket/server');
+  io = wsModule.io;
+  wsModule.startWebSocketServer();
+  
+  httpServer.listen(PORT, () => {
+    console.log(`🚀 AuraNova Backend Server running on port ${PORT}`);
+    console.log(`📡 CORS enabled for ${FRONTEND_URL}`);
+    console.log(`🔗 WebSocket ready for connections`);
+  });
+}
 
 // Graceful Shutdown
 process.on('SIGTERM', () => {
@@ -88,4 +100,8 @@ process.on('SIGTERM', () => {
   });
 });
 
+// Export for Firebase Functions
 export { app, httpServer, io };
+
+// Re-export Firebase Cloud Functions
+export { api, onMessageCreated, cleanupOldData } from './firebase-integration';

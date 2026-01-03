@@ -1,12 +1,15 @@
 name: Deploy to GitHub Pages
 
+# GitHub Pages requires static export which conflicts with dynamic routes
+# This workflow is disabled - use Firebase Hosting instead
+# To re-enable, set output: 'export' in next.config.mjs and remove dynamic routes
+
 on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+  workflow_dispatch:  # Manual trigger only
+  # Uncomment below to auto-deploy on push
+  # push:
+  #   branches:
+  #     - main
 
 permissions:
   contents: read
@@ -42,11 +45,20 @@ jobs:
       - name: Build
         working-directory: web_platform/frontend
         run: npm run build
+        env:
+          NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}
+          NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
+
+      - name: Export Static Files
+        working-directory: web_platform/frontend
+        run: npx next export || echo "Static export skipped - dynamic routes present"
 
       - name: Upload Artifact
         uses: actions/upload-pages-artifact@v2
         with:
-          path: 'web_platform/frontend/.next/out'
+          path: 'web_platform/frontend/out'
 
   deploy:
     name: Deploy to GitHub Pages

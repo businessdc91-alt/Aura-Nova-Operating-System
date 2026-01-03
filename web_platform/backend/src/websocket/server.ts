@@ -494,8 +494,16 @@ app.get('/stats', (req, res) => {
 // ============== SERVER START ==============
 const PORT = process.env.WS_PORT || 3002;
 
-httpServer.listen(PORT, () => {
-  console.log(`[WS] WebSocket server running on port ${PORT}`);
-});
+// Only start server when run directly (not when imported)
+function startWebSocketServer() {
+  httpServer.listen(PORT, () => {
+    console.log(`[WS] WebSocket server running on port ${PORT}`);
+  });
+}
 
-export { io, connectedUsers, channels, messageHistory };
+// Start only if this file is run directly
+if (require.main === module) {
+  startWebSocketServer();
+}
+
+export { io, connectedUsers, channels, messageHistory, startWebSocketServer };
