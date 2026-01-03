@@ -103,5 +103,5 @@ process.on('SIGTERM', () => {
 // Export for Firebase Functions
 export { app, httpServer, io };
 
-// Re-export Firebase Cloud Functions
-export { api, onMessageCreated, cleanupOldData } from './firebase-integration';
+// Re-export Firebase Cloud Functions (onMessageCreated disabled due to trigger type change)
+export { api, cleanupOldData } from './firebase-integration';
