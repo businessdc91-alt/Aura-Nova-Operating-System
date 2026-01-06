@@ -153,11 +153,11 @@ const ADVANCED_TOOLS: ToolCard[] = [
   },
   {
     title: 'Chemistry Lab',
-    description: 'Experimental AI features and bleeding-edge creative tools',
-    href: '/lab',
+    description: 'Science tutor for Biology, Chemistry, Physics, and Anatomy',
+    href: '/suites/academics?tab=science',
     icon: FlaskConical,
     color: 'from-lime-600 to-green-600',
-    status: 'coming-soon',
+    status: 'ready',
   },
   {
     title: 'Aetherium TCG',
