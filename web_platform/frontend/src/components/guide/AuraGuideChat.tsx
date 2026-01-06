@@ -159,9 +159,10 @@ export function AuraGuideChat({
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 z-50 w-16 h-16 rounded-full bg-gradient-to-br from-purple-600 to-pink-600 
-                   shadow-lg shadow-purple-500/30 flex items-center justify-center hover:scale-110 
+        className="fixed bottom-6 right-6 w-16 h-16 rounded-full bg-gradient-to-br from-purple-600 to-pink-600
+                   shadow-lg shadow-purple-500/30 flex items-center justify-center hover:scale-110
                    transition-transform duration-200 group"
+        style={{ zIndex: 9999 }}
         aria-label="Open Aura Guide"
       >
         <Sparkles className="w-8 h-8 text-white" />
@@ -179,7 +180,7 @@ export function AuraGuideChat({
   // ============== RENDER MINIMIZED ==============
   if (variant === 'floating' && isMinimized) {
     return (
-      <div className="fixed bottom-6 right-6 z-50 w-72 bg-gray-900 rounded-xl border border-gray-700 shadow-xl overflow-hidden">
+      <div className="fixed bottom-6 right-6 w-72 bg-gray-900 rounded-xl border border-gray-700 shadow-xl overflow-hidden" style={{ zIndex: 9999 }}>
         <div 
           className="flex items-center justify-between p-3 bg-gradient-to-r from-purple-600/20 to-pink-600/20 cursor-pointer"
           onClick={() => setIsMinimized(false)}
@@ -364,8 +365,9 @@ export function AuraGuideChat({
   // ============== VARIANT WRAPPERS ==============
   if (variant === 'floating') {
     return (
-      <div className="fixed bottom-6 right-6 z-50 w-96 h-[600px] bg-gray-900 rounded-2xl border border-gray-700 
-                      shadow-2xl shadow-purple-500/10 flex flex-col overflow-hidden">
+      <div className="fixed bottom-6 right-6 w-96 h-[600px] bg-gray-900 rounded-2xl border border-gray-700
+                      shadow-2xl shadow-purple-500/10 flex flex-col overflow-hidden"
+           style={{ zIndex: 9999 }}>
         {chatContent}
       </div>
     );

@@ -90,9 +90,9 @@ export function AuraGuideSystem() {
       case 'execute':
         // Handle specific system actions
         if (command.target === 'export') {
-          toast.info('Please use the export button in the current tool', { icon: '💾' });
+          toast('Please use the export button in the current tool', { icon: '💾' });
         } else if (command.target === 'save') {
-          toast.info('Auto-save is enabled for all tools', { icon: '✅' });
+          toast('Auto-save is enabled for all tools', { icon: '✅' });
         }
         break;
 
@@ -151,7 +151,7 @@ export function AuraGuideSystem() {
   }
 
   return (
-    <div className="aura-guide-system">
+    <div className="aura-guide-system" style={{ zIndex: 9999, position: 'relative' }}>
       {isVisible && (
         <AuraGuideChat
           variant="floating"
