@@ -1,3 +1,23 @@
+/**
+ * =============================================================================
+ * THE DOJO - AI-Powered Game Generation & Multi-AI Collaboration
+ * =============================================================================
+ *
+ * Author: Dillan Copeland (DC)
+ * Created: January 5, 2026
+ * Last Modified: January 5, 2026 - DC
+ * Copyright © 2026 Dillan Copeland. All Rights Reserved.
+ *
+ * NOTICE: This code is proprietary and confidential.
+ * Unauthorized copying, distribution, modification, or use of this software,
+ * via any medium, is strictly prohibited without express written permission
+ * from the copyright owner, Dillan Copeland.
+ *
+ * For licensing inquiries, please contact the owner.
+ *
+ * =============================================================================
+ */
+
 'use client';
 
 import { useState } from 'react';
@@ -6,10 +26,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useGameGeneration, useGameProject, useGameExport } from '@/hooks/useGameGeneration';
 import { useActiveModel } from '@/hooks/useModelManagement';
-import { Wand2, Code2, Download, Zap, BookOpen } from 'lucide-react';
+import { Wand2, Code2, Download, Zap, BookOpen, Users } from 'lucide-react';
+import { CatalystDojo } from '@/components/coding-dojo/CatalystDojo';
 
 export default function DojoPage() {
-  const [tab, setTab] = useState<'generator' | 'viewer'>('generator');
+  const [tab, setTab] = useState<'generator' | 'viewer' | 'catalyst'>('generator');
   const { model } = useActiveModel();
   const { generateGame, generating, gameProject, reset } = useGameGeneration();
   const { viewingSection, setViewingSection } = useGameProject(gameProject);
@@ -71,6 +92,14 @@ export default function DojoPage() {
             <Wand2 className="w-4 h-4" />
             Create Game
           </Button>
+          <Button
+            variant={tab === 'catalyst' ? 'default' : 'outline'}
+            onClick={() => setTab('catalyst')}
+            className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700"
+          >
+            <Users className="w-4 h-4" />
+            Multi-AI Catalyst
+          </Button>
           {gameProject && (
             <Button
               variant={tab === 'viewer' ? 'default' : 'outline'}
@@ -92,6 +121,9 @@ export default function DojoPage() {
             onGenerate={handleGenerate}
           />
         )}
+
+        {/* Catalyst Multi-AI Tab */}
+        {tab === 'catalyst' && <CatalystDojo />}
 
         {/* Viewer Tab */}
         {tab === 'viewer' && gameProject && (
