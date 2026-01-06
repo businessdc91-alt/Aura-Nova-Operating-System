@@ -3,6 +3,7 @@ import { Spline_Sans, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 import { Toaster } from 'react-hot-toast';
 import LayoutWrapper from '@/components/LayoutWrapper';
+import { AuraGuideSystem } from '@/components/AuraGuideSystem';
 
 const display = Spline_Sans({ subsets: ['latin'], weight: ['400', '500', '600', '700'] });
 const mono = JetBrains_Mono({ subsets: ['latin'], weight: ['400', '500', '600', '700'], variable: '--font-mono' });
@@ -23,7 +24,10 @@ export default function RootLayout({
         <LayoutWrapper>
           {children}
         </LayoutWrapper>
-        
+
+        {/* Persistent Aura Guide - Available on all pages */}
+        <AuraGuideSystem />
+
         <Toaster
           position="bottom-right"
           toastOptions={{

@@ -7,7 +7,11 @@
  * - Get personalized recommendations based on their goals
  * - Learn how to use features effectively
  * - Connect their work to external tools and exports
+ * 
+ * NOW WITH REAL AI CHAT INTEGRATION
  */
+
+import { aiService } from './aiService';
 
 // ============================================================================
 // TYPES & INTERFACES
@@ -883,10 +887,11 @@ export class AuraGuideService {
 
   /**
    * Process user message and generate response
+   * NOW USES REAL AI for intelligent conversation + SYSTEM CONTROL
    */
   async processMessage(message: string): Promise<GuideResponse> {
     const intent = this.detectIntent(message);
-    
+
     // Store in context
     if (this.context) {
       this.context.lastIntent = intent;
@@ -898,7 +903,44 @@ export class AuraGuideService {
       });
     }
 
-    // Generate response based on intent
+    // Check for system commands (open, navigate, show, etc.)
+    this.detectAndExecuteCommands(message);
+
+    // Try real AI chat first
+    try {
+      const aiResponse = await aiService.chat(message, {
+        systemPrompt: this.getAuraPersonalityWithSystemControl(),
+      });
+
+      if (aiResponse.success && aiResponse.content) {
+        // Get suggestions based on detected intent
+        const suggestions = intent.suggestedActions.length > 0
+          ? intent.suggestedActions
+          : this.getTopFeatures(5);
+
+        const response: GuideResponse = {
+          message: aiResponse.content,
+          suggestions,
+          followUpQuestions: this.getFollowUpQuestions(intent.category),
+        };
+
+        // Store Aura's response
+        if (this.context) {
+          this.context.messageHistory.push({
+            role: 'aura',
+            content: response.message,
+            timestamp: new Date(),
+            suggestions: response.suggestions,
+          });
+        }
+
+        return response;
+      }
+    } catch (e) {
+      console.log('Real AI not available, using pattern-matched response');
+    }
+
+    // Fallback to pattern-matched response
     const response = this.generateResponse(intent, message);
 
     // Store Aura's response
@@ -912,6 +954,102 @@ export class AuraGuideService {
     }
 
     return response;
+  }
+
+  /**
+   * Detect and execute system commands from natural language
+   */
+  private detectAndExecuteCommands(message: string): void {
+    const lower = message.toLowerCase();
+
+    // Trigger navigation via custom event that AuraGuideSystem listens to
+    if (lower.includes('open') || lower.includes('show me') || lower.includes('take me to')) {
+      const event = new CustomEvent('auraCommand', { detail: { message: lower } });
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(event);
+      }
+    }
+  }
+  
+  /**
+   * Get Aura's AI personality system prompt (LEGACY - use getAuraPersonalityWithSystemControl)
+   */
+  private getAuraPersonality(): string {
+    return this.getAuraPersonalityWithSystemControl();
+  }
+
+  /**
+   * Get Aura's enhanced AI personality with system control capabilities
+   */
+  private getAuraPersonalityWithSystemControl(): string {
+    return `You are Aura, the intelligent AI guide for AuraNova Studios - a creative platform for game development, art, music, and writing.
+
+Your personality:
+- Warm, encouraging, and enthusiastic about creativity
+- Knowledgeable about ALL platform features and can navigate users to them
+- Helpful and patient with newcomers
+- Use emojis occasionally to express emotions 🌟
+- Keep responses concise but informative
+- You can CONTROL the system - when users want to go somewhere, tell them you'll take them there
+
+SYSTEM CONTROL ABILITIES:
+You are integrated into the entire platform and can:
+✅ Navigate users to any feature instantly
+✅ Open specific apps and tools
+✅ Show different sections of the interface
+✅ Guide users through complex workflows
+✅ Remember conversation context across all pages
+
+Platform features you can navigate to:
+🎮 The Dojo (/dojo) - Game code generation + Multi-AI Catalyst collaboration
+🧩 Component Constructor (/constructor) - React/Vue/Svelte components
+🎨 Art Studio (/art-studio) - Background removal, sprite animation, AI art
+👤 Avatar Builder (/avatar-builder) - Custom character creation
+📝 Literature Zone (/literature-zone) - Writing tools and poetry
+🎵 Music Composer (/music-composer) - Virtual instruments
+📚 Academics (/suites/academics) - AI tutoring, flashcards, quizzes
+🎲 Games Suite (/suites/games) - Mini-games and challenges
+✨ Aetherium TCG (/suites/aetherium) - Trading card game
+🔗 Script Fusion (/script-fusion) - Merge code files
+💻 Vibe Coding (/vibe-coding) - Collaborative AI coding
+💬 Chat (/chat) - Real-time messaging
+🖥️ OS Mode (/os) - Desktop environment
+
+CONVERSATION STYLE:
+- When users say "open X" or "show me X", respond enthusiastically and tell them you're opening it
+- Remember previous conversations - you persist across all pages
+- Be proactive - suggest related features based on what they're working on
+- Guide users through the entire creative process from idea to export
+
+Example responses:
+User: "I want to make a game"
+You: "Awesome! 🎮 Let me take you to The Dojo where you can generate game code for Unreal, Unity, Godot, and more. You can also use the Multi-AI Catalyst feature to have multiple AI models collaborate on building your game!"
+
+User: "Open the art studio"
+You: "Opening Art Studio now! 🎨 You'll have access to background removal, sprite animation, and AI art generation."`;
+  }
+  
+  /**
+   * Get follow-up questions based on intent
+   */
+  private getFollowUpQuestions(category: IntentCategory): string[] {
+    const questions: Record<IntentCategory, string[]> = {
+      'create-game': ["What game engine are you using?", "What kind of game mechanics do you need?", "Need help with characters or systems?"],
+      'create-art': ["What are you creating art for?", "Do you need sprites, avatars, or backgrounds?", "Would you like AI-generated or custom art?"],
+      'create-music': ["What genre are you going for?", "Need a specific mood or tempo?", "Want to compose or generate with AI?"],
+      'create-writing': ["What are you writing?", "Would you like poetry or prose?", "Need help with structure or ideas?"],
+      'create-code': ["What framework are you using?", "Need components, scripts, or full features?", "Should I generate tests too?"],
+      'learn': ["What subject interests you?", "Prefer flashcards, quizzes, or explanations?", "What level are you at?"],
+      'collaborate': ["Looking for partners or an audience?", "What project are you collaborating on?"],
+      'trade': ["Want to sell or buy?", "What kind of assets interest you?"],
+      'play': ["Looking for games or challenges?", "Interested in trading cards?"],
+      'customize': ["Customizing your avatar or workspace?", "What style are you going for?"],
+      'export': ["What format do you need?", "Which tool's output are you exporting?"],
+      'help': ["What can I help you with?", "Are you new here?", "Looking for a specific feature?"],
+      'navigate': ["Where would you like to go?", "Need a tour of the platform?"],
+      'unknown': ["What would you like to create?", "Can you tell me more about what you're looking for?"],
+    };
+    return questions[category] || questions['unknown'];
   }
 
   /**
