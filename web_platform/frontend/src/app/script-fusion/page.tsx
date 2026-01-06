@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import toast from 'react-hot-toast';
+import { aiService } from '@/services/aiService';
 import {
   Combine,
   Plus,
@@ -20,6 +21,7 @@ import {
   Zap,
   Eye,
   RefreshCw,
+  Loader2,
 } from 'lucide-react';
 
 // ============== TYPES ==============
@@ -98,18 +100,57 @@ export default function ScriptFusionPage() {
     }
 
     setIsMerging(true);
-    const loadingToast = toast.loading('Merging scripts...');
+    const loadingToast = toast.loading('AI is merging scripts...');
 
     try {
-      // Simulate AI-powered merge (replace with actual API)
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      const mergeResult = performMerge(filledScripts, outputLanguage);
-      setResult(mergeResult);
-      setShowPreview(true);
-      toast.success('Scripts merged successfully!', { id: loadingToast });
+      // Use real AI service for intelligent merging
+      const scriptsToMerge = filledScripts.map(s => ({
+        name: s.name,
+        content: s.content,
+      }));
+      
+      const response = await aiService.fuseScripts(scriptsToMerge);
+      
+      if (response.success && response.content) {
+        // Clean up markdown code blocks if present
+        let mergedCode = response.content;
+        mergedCode = mergedCode.replace(/```[\w]*\n?/g, '').replace(/```$/g, '').trim();
+        
+        // Build result object
+        const mergeResult: MergeResult = {
+          mergedCode,
+          conflicts: [], // AI handles conflicts internally
+          summary: {
+            totalLines: mergedCode.split('\n').length,
+            importsCount: (mergedCode.match(/^import |^from |^using |^#include/gm) || []).length,
+            functionsCount: (mergedCode.match(/function |def |public .* \(/gm) || []).length,
+            classesCount: (mergedCode.match(/class /gm) || []).length,
+            variablesCount: 0,
+          },
+        };
+        
+        setResult(mergeResult);
+        setShowPreview(true);
+        toast.success('Scripts merged with AI!', { id: loadingToast });
+      } else {
+        // Fallback to algorithmic merge if AI fails
+        console.warn('AI merge failed, using fallback:', response.error);
+        const mergeResult = performMerge(filledScripts, outputLanguage);
+        setResult(mergeResult);
+        setShowPreview(true);
+        toast.success('Scripts merged (fallback mode)', { id: loadingToast });
+      }
     } catch (error) {
-      toast.error('Merge failed', { id: loadingToast });
+      console.error('Merge error:', error);
+      // Try fallback
+      try {
+        const mergeResult = performMerge(filledScripts, outputLanguage);
+        setResult(mergeResult);
+        setShowPreview(true);
+        toast.success('Scripts merged (fallback mode)', { id: loadingToast });
+      } catch (e) {
+        toast.error('Merge failed', { id: loadingToast });
+      }
     }
 
     setIsMerging(false);

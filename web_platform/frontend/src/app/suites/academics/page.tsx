@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import toast from 'react-hot-toast';
+import { aiService } from '@/services/aiService';
 import { DailyChallengeWidget, WalletDisplay } from '@/components/challenges/DailyChallengeWidget';
 import {
   GraduationCap,
@@ -146,23 +147,25 @@ function LanguageLearning() {
     setInput('');
     setIsLoading(true);
 
-    // Simulate AI response
-    await new Promise((r) => setTimeout(r, 1200));
+    try {
+      const langName = languages.find(l => l.id === selectedLanguage)?.name || 'the language';
+      const response = await aiService.generate(input, {
+        systemPrompt: `You are a friendly ${langName} language tutor. Help the user learn ${langName} by providing translations, pronunciation guides, grammar tips, and example sentences. Use occasional ${langName} phrases in your response. Keep responses helpful and encouraging.`,
+        temperature: 0.8,
+        maxTokens: 1024,
+      });
 
-    const responses: Record<string, string> = {
-      spanish: `¡Hola! Let me help you with that. "${input}" in Spanish context: I'll provide you with translations, pronunciation guides, and example sentences to help you learn naturally.`,
-      french: `Bonjour! Regarding "${input}" - I'll break this down with French translations and cultural context to enhance your learning.`,
-      german: `Guten Tag! For "${input}" in German - Let me provide you with proper grammar structure and vocabulary.`,
-    };
+      const aiMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: response.success ? response.content : `🌟 I'd love to help you learn "${input}" in ${langName}! To unlock AI tutoring, try setting up your own AI - it's free! Download LM Studio or Ollama from the AI Setup app.`,
+        timestamp: new Date(),
+      };
 
-    const aiMessage: ChatMessage = {
-      id: (Date.now() + 1).toString(),
-      role: 'assistant',
-      content: responses[selectedLanguage] || `I'll help you learn ${languages.find(l => l.id === selectedLanguage)?.name}. Your query about "${input}" is a great starting point!`,
-      timestamp: new Date(),
-    };
-
-    setMessages((prev) => [...prev, aiMessage]);
+      setMessages((prev) => [...prev, aiMessage]);
+    } catch (error) {
+      toast.error('AI tutor temporarily unavailable');
+    }
     setIsLoading(false);
   };
 
@@ -367,40 +370,34 @@ function MathTutor() {
     setSolution([]);
     setShowSteps(false);
 
-    await new Promise((r) => setTimeout(r, 1500));
+    try {
+      const response = await aiService.generate(problem, {
+        systemPrompt: `You are a ${topic} tutor. Solve the following problem step-by-step.
+Format your response as numbered steps, like:
+Step 1: [explanation]
+Step 2: [calculation]
+...
+Final Answer: [result]
 
-    // Demo solutions based on topic
-    const demoSolutions: Record<string, string[]> = {
-      algebra: [
-        'Step 1: Identify the equation: 2x + 5 = 13',
-        'Step 2: Subtract 5 from both sides: 2x = 13 - 5',
-        'Step 3: Simplify: 2x = 8',
-        'Step 4: Divide both sides by 2: x = 8 ÷ 2',
-        'Step 5: Solution: x = 4',
-        '✓ Check: 2(4) + 5 = 8 + 5 = 13 ✓',
-      ],
-      calculus: [
-        'Step 1: Apply the power rule: d/dx[xⁿ] = nxⁿ⁻¹',
-        'Step 2: For x³: d/dx[x³] = 3x²',
-        'Step 3: For 2x²: d/dx[2x²] = 4x',
-        'Step 4: Combine: 3x² + 4x',
-        'Final Answer: f\'(x) = 3x² + 4x',
-      ],
-      trigonometry: [
-        'Step 1: Recall the unit circle values',
-        'Step 2: At 30° (π/6 radians):',
-        'Step 3: sin(30°) = opposite/hypotenuse = 1/2',
-        'Final Answer: sin(30°) = 0.5 or 1/2',
-      ],
-    };
+Be clear, educational, and show all work.`,
+        temperature: 0.3,
+        maxTokens: 1024,
+      });
 
-    setSolution(demoSolutions[topic] || [
-      'Step 1: Analyze the problem',
-      'Step 2: Apply relevant formulas',
-      'Step 3: Show working',
-      'Step 4: Verify the solution',
-      'Final Answer: [Solution will be computed by AI]',
-    ]);
+      if (response.success) {
+        // Parse steps from response
+        const steps = response.content.split('\n').filter(line => line.trim());
+        setSolution(steps);
+      } else {
+        setSolution([
+          'Step 1: Analyze the problem: ' + problem,
+          'Step 2: AI tutor unavailable - try running a local LLM',
+          'Step 3: Or check your API configuration',
+        ]);
+      }
+    } catch (error) {
+      setSolution(['Error: Could not solve problem. Please try again.']);
+    }
     setIsLoading(false);
   };
 
@@ -563,43 +560,30 @@ function ScienceLab() {
     setIsLoading(true);
     setResponse('');
 
-    await new Promise((r) => setTimeout(r, 1500));
+    try {
+      const subjectName = subjects.find(s => s.id === subject)?.name || subject;
+      const result = await aiService.generate(query, {
+        systemPrompt: `You are an expert ${subjectName} tutor. Explain concepts clearly and thoroughly.
+Format your response with:
+- A clear title
+- Key points as bullet points
+- Detailed explanation
+- Real-world applications or examples
+- End with an engaging question to encourage further learning
 
-    // Demo responses
-    const responses: Record<string, string> = {
-      biology: `**Understanding ${query}**
+Use markdown formatting for readability.`,
+        temperature: 0.7,
+        maxTokens: 1500,
+      });
 
-Great question! Let me explain this biology concept in detail.
-
-**Key Points:**
-• This is fundamental to understanding living organisms
-• Cells are the basic unit of life
-• All living things are composed of one or more cells
-
-**Detailed Explanation:**
-When we look at biological systems, we see incredible complexity and organization. From the molecular level to entire ecosystems, life follows certain patterns and principles.
-
-**Why It Matters:**
-Understanding these concepts helps us appreciate the interconnectedness of all living things and can have practical applications in medicine, agriculture, and environmental science.
-
-*Want me to go deeper into any specific aspect?*`,
-      chemistry: `**Chemical Concepts: ${query}**
-
-Let's break down this chemistry topic!
-
-**Fundamentals:**
-• Matter is composed of atoms
-• Atoms combine to form molecules
-• Chemical reactions involve the rearrangement of atoms
-
-**The Science:**
-Chemistry is often called the "central science" because it connects physics with other natural sciences.
-
-**Practical Applications:**
-From the medicines we take to the materials we use daily, chemistry is everywhere!`,
-    };
-
-    setResponse(responses[subject] || `**Exploring: ${query}**\n\nThis is a fascinating topic in ${subject}! Let me provide a comprehensive explanation...`);
+      if (result.success) {
+        setResponse(result.content);
+      } else {
+        setResponse(`**Exploring: ${query}**\n\n🔬 Great question about ${subjectName}! To get AI-powered explanations, set up your own AI - it's easier than you think!\n\n**Quick Setup:**\n1. Download LM Studio (lmstudio.ai) - it's free!\n2. Download any model (Llama 3 is great)\n3. Click 'Start Server'\n4. Come back here and ask again!\n\nYou'll be learning with your own personal AI tutor! 🚀`);
+      }
+    } catch (error) {
+      setResponse('Error connecting to AI tutor. Please try again.');
+    }
     setIsLoading(false);
   };
 
@@ -856,6 +840,14 @@ function StudyAssistant() {
   const [showBack, setShowBack] = useState(false);
   const [newFront, setNewFront] = useState('');
   const [newBack, setNewBack] = useState('');
+  const [aiTopic, setAiTopic] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [notesInput, setNotesInput] = useState('');
+  const [notesSummary, setNotesSummary] = useState('');
+  const [quizTopic, setQuizTopic] = useState('');
+  const [quizType, setQuizType] = useState('Multiple Choice');
+  const [quizCount, setQuizCount] = useState(5);
+  const [quizQuestions, setQuizQuestions] = useState<{question: string; options?: string[]; answer: string}[]>([]);
 
   const addFlashcard = () => {
     if (!newFront.trim() || !newBack.trim()) return;
@@ -873,6 +865,125 @@ function StudyAssistant() {
     setNewFront('');
     setNewBack('');
     toast.success('Flashcard added!');
+  };
+
+  const generateFlashcardsAI = async () => {
+    if (!aiTopic.trim()) return;
+    setIsGenerating(true);
+    
+    try {
+      const result = await aiService.generate(
+        `Generate 5 flashcards for studying: ${aiTopic}`,
+        {
+          systemPrompt: `You are an educational flashcard generator. Create flashcards in this exact JSON format:
+[
+  {"front": "question text", "back": "answer text"},
+  ...
+]
+Only output the JSON array, nothing else. Make questions clear and answers concise but complete.`,
+          temperature: 0.7,
+          maxTokens: 1000,
+        }
+      );
+
+      if (result.success) {
+        try {
+          const parsed = JSON.parse(result.content.replace(/```json?|```/g, '').trim());
+          const newCards = parsed.map((card: {front: string; back: string}, idx: number) => ({
+            id: `ai-${Date.now()}-${idx}`,
+            front: card.front,
+            back: card.back,
+            category: aiTopic,
+            mastered: false,
+          }));
+          setFlashcards([...flashcards, ...newCards]);
+          toast.success(`Generated ${newCards.length} flashcards!`);
+          setAiTopic('');
+        } catch {
+          toast.error('Failed to parse AI response. Try again.');
+        }
+      } else {
+        toast.error('AI unavailable. Try running a local LLM!');
+      }
+    } catch {
+      toast.error('Error generating flashcards.');
+    }
+    setIsGenerating(false);
+  };
+
+  const summarizeNotes = async () => {
+    if (!notesInput.trim()) return;
+    setIsGenerating(true);
+    setNotesSummary('');
+
+    try {
+      const result = await aiService.generate(notesInput, {
+        systemPrompt: `You are an expert study assistant. Analyze these notes and provide:
+
+## Summary
+A concise 2-3 sentence summary of the main topic.
+
+## Key Points
+• List the most important concepts as bullet points
+
+## Important Terms
+• Define any technical terms or vocabulary
+
+## Study Tips
+• Suggest how to remember this material
+
+Use markdown formatting for readability.`,
+        temperature: 0.6,
+        maxTokens: 1200,
+      });
+
+      if (result.success) {
+        setNotesSummary(result.content);
+      } else {
+        setNotesSummary('**📚 Ready to Summarize Your Notes!**\n\nTo unlock AI-powered summaries, set up your own AI:\n\n1. **Download LM Studio** from lmstudio.ai (free!)\n2. **Get a model** like Llama 3 or Mistral\n3. **Start the server** and return here\n\nYour notes will be summarized instantly - and it all runs on your computer! 🎓');
+      }
+    } catch {
+      setNotesSummary('Error generating summary. Please try again.');
+    }
+    setIsGenerating(false);
+  };
+
+  const generateQuiz = async () => {
+    if (!quizTopic.trim()) return;
+    setIsGenerating(true);
+    setQuizQuestions([]);
+
+    try {
+      const result = await aiService.generate(
+        `Create a ${quizType} quiz about: ${quizTopic}`,
+        {
+          systemPrompt: `Generate ${quizCount} ${quizType} questions. Return ONLY a JSON array:
+[
+  {"question": "question text", "options": ["A", "B", "C", "D"], "answer": "correct answer explanation"}
+]
+For True/False, options should be ["True", "False"].
+For Short Answer, omit options field.
+Make questions educational and appropriate difficulty.`,
+          temperature: 0.7,
+          maxTokens: 1500,
+        }
+      );
+
+      if (result.success) {
+        try {
+          const parsed = JSON.parse(result.content.replace(/```json?|```/g, '').trim());
+          setQuizQuestions(parsed);
+          toast.success(`Generated ${parsed.length} quiz questions!`);
+        } catch {
+          toast.error('Failed to parse quiz. Try again.');
+        }
+      } else {
+        toast.error('AI unavailable. Try a local LLM!');
+      }
+    } catch {
+      toast.error('Error generating quiz.');
+    }
+    setIsGenerating(false);
   };
 
   const toggleMastered = (id: string) => {
@@ -965,12 +1076,44 @@ function StudyAssistant() {
               <CardTitle className="text-white text-sm">Add Flashcard</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Textarea
-                value={newFront}
-                onChange={(e) => setNewFront(e.target.value)}
-                placeholder="Question / Front"
-                className="bg-slate-800 border-slate-700 text-white"
-              />
+              {/* AI Generation */}
+              <div className="bg-aura-900/30 border border-aura-600/30 rounded-lg p-3 space-y-2">
+                <p className="text-xs text-aura-400 font-medium">✨ AI Generate</p>
+                <Input
+                  value={aiTopic}
+                  onChange={(e) => setAiTopic(e.target.value)}
+                  placeholder="Topic (e.g., World War 2, Calculus)"
+                  className="bg-slate-800 border-slate-700 text-white text-sm"
+                />
+                <Button 
+                  onClick={generateFlashcardsAI}
+                  disabled={!aiTopic.trim() || isGenerating}
+                  size="sm"
+                  className="w-full bg-gradient-to-r from-aura-500 to-purple-500"
+                >
+                  {isGenerating ? (
+                    <>
+                      <RefreshCw size={14} className="mr-1 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles size={14} className="mr-1" />
+                      Generate 5 Cards
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              <div className="border-t border-slate-800 pt-4">
+                <p className="text-xs text-slate-500 mb-2">Or add manually:</p>
+                <Textarea
+                  value={newFront}
+                  onChange={(e) => setNewFront(e.target.value)}
+                  placeholder="Question / Front"
+                  className="bg-slate-800 border-slate-700 text-white"
+                />
+              </div>
               <Textarea
                 value={newBack}
                 onChange={(e) => setNewBack(e.target.value)}
@@ -1014,13 +1157,33 @@ function StudyAssistant() {
           </CardHeader>
           <CardContent className="space-y-4">
             <Textarea
+              value={notesInput}
+              onChange={(e) => setNotesInput(e.target.value)}
               placeholder="Paste your notes, lecture content, or textbook excerpts here..."
               className="bg-slate-800 border-slate-700 text-white min-h-[200px]"
             />
-            <Button className="w-full bg-aura-600">
-              <Sparkles size={18} className="mr-2" />
-              Generate Summary
+            <Button 
+              onClick={summarizeNotes}
+              disabled={!notesInput.trim() || isGenerating}
+              className="w-full bg-aura-600"
+            >
+              {isGenerating ? (
+                <>
+                  <RefreshCw size={18} className="mr-2 animate-spin" />
+                  Analyzing Notes...
+                </>
+              ) : (
+                <>
+                  <Sparkles size={18} className="mr-2" />
+                  Generate Summary
+                </>
+              )}
             </Button>
+            {notesSummary && (
+              <div className="bg-slate-800 rounded-lg p-4 prose prose-invert max-w-none">
+                <div dangerouslySetInnerHTML={{ __html: notesSummary.replace(/\n/g, '<br/>').replace(/##\s*(.+)/g, '<h3 class="text-aura-400">$1</h3>').replace(/•\s*(.+)/g, '<li>$1</li>') }} />
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
@@ -1033,27 +1196,74 @@ function StudyAssistant() {
           </CardHeader>
           <CardContent className="space-y-4">
             <Input
+              value={quizTopic}
+              onChange={(e) => setQuizTopic(e.target.value)}
               placeholder="Enter a topic to generate quiz questions..."
               className="bg-slate-800 border-slate-700 text-white"
             />
             <div className="flex gap-2">
-              <select className="flex-1 bg-slate-800 border border-slate-700 rounded-md text-white px-3 py-2">
+              <select 
+                value={quizType}
+                onChange={(e) => setQuizType(e.target.value)}
+                className="flex-1 bg-slate-800 border border-slate-700 rounded-md text-white px-3 py-2"
+              >
                 <option>Multiple Choice</option>
                 <option>True/False</option>
                 <option>Short Answer</option>
                 <option>Mixed</option>
               </select>
-              <select className="flex-1 bg-slate-800 border border-slate-700 rounded-md text-white px-3 py-2">
-                <option>5 Questions</option>
-                <option>10 Questions</option>
-                <option>15 Questions</option>
-                <option>20 Questions</option>
+              <select 
+                value={quizCount}
+                onChange={(e) => setQuizCount(Number(e.target.value))}
+                className="flex-1 bg-slate-800 border border-slate-700 rounded-md text-white px-3 py-2"
+              >
+                <option value={5}>5 Questions</option>
+                <option value={10}>10 Questions</option>
+                <option value={15}>15 Questions</option>
+                <option value={20}>20 Questions</option>
               </select>
             </div>
-            <Button className="w-full bg-aura-600">
-              <Target size={18} className="mr-2" />
-              Generate Quiz
+            <Button 
+              onClick={generateQuiz}
+              disabled={!quizTopic.trim() || isGenerating}
+              className="w-full bg-aura-600"
+            >
+              {isGenerating ? (
+                <>
+                  <RefreshCw size={18} className="mr-2 animate-spin" />
+                  Generating Quiz...
+                </>
+              ) : (
+                <>
+                  <Target size={18} className="mr-2" />
+                  Generate Quiz
+                </>
+              )}
             </Button>
+
+            {quizQuestions.length > 0 && (
+              <div className="space-y-4 pt-4 border-t border-slate-800">
+                <h4 className="text-white font-semibold">Generated Questions:</h4>
+                {quizQuestions.map((q, idx) => (
+                  <div key={idx} className="bg-slate-800 rounded-lg p-4 space-y-2">
+                    <p className="text-white font-medium">{idx + 1}. {q.question}</p>
+                    {q.options && (
+                      <div className="grid grid-cols-2 gap-2 pl-4">
+                        {q.options.map((opt, oidx) => (
+                          <button key={oidx} className="text-left text-sm text-slate-300 hover:text-aura-400 transition">
+                            {String.fromCharCode(65 + oidx)}. {opt}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    <details className="text-xs text-slate-500">
+                      <summary className="cursor-pointer hover:text-aura-400">Show Answer</summary>
+                      <p className="mt-1 text-green-400">{q.answer}</p>
+                    </details>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       )}

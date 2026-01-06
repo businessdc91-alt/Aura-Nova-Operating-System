@@ -91,7 +91,9 @@ export default function ChatPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showUserList, setShowUserList] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [isAtBottom, setIsAtBottom] = useState(true);
 
   // Demo user (in production, get from auth)
   const currentUser = {
@@ -191,9 +193,22 @@ export default function ChatPage() {
     };
   }, []);
 
+  // Check if user is at bottom of messages
+  const checkIfAtBottom = useCallback(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    const threshold = 150; // pixels from bottom
+    const isBottom = container.scrollHeight - container.scrollTop - container.clientHeight < threshold;
+    setIsAtBottom(isBottom);
+  }, []);
+
+  // Only auto-scroll if user is at bottom
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    if (isAtBottom) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, isAtBottom]);
 
   const joinChannel = (channel: Channel) => {
     if (socket && activeChannel?.id !== channel.id) {
@@ -459,7 +474,11 @@ export default function ChatPage() {
 
             {/* Messages Area */}
             <div className="flex-1 flex">
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              <div
+                ref={messagesContainerRef}
+                onScroll={checkIfAtBottom}
+                className="flex-1 overflow-y-auto p-4 space-y-4"
+              >
                 {groupMessagesByDate(messages).map((group) => (
                   <div key={group.date}>
                     <div className="flex items-center gap-4 my-4">

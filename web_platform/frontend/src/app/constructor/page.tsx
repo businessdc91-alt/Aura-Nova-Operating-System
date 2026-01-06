@@ -18,7 +18,9 @@ import {
   TestTube2,
   FileCode,
   Zap,
+  Loader2,
 } from 'lucide-react';
+import { aiService } from '@/services/aiService';
 
 // ============== TYPES ==============
 interface ComponentOutput {
@@ -59,17 +61,19 @@ export default function ConstructorPage() {
     }
 
     setIsGenerating(true);
-    const loadingToast = toast.loading('Generating component...');
+    const loadingToast = toast.loading('Generating component with AI...');
 
     try {
-      // Simulate AI generation (replace with real API call)
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      const result = generateComponentCode(framework, componentName, description);
+      // Use real AI service
+      const result = await aiService.generateComponent(componentName, description, framework);
       setOutput(result);
-      toast.success('Component generated!', { id: loadingToast });
-    } catch (error) {
-      toast.error('Generation failed', { id: loadingToast });
+      toast.success('Component generated with AI!', { id: loadingToast });
+    } catch (error: any) {
+      console.error('AI generation failed:', error);
+      // Fallback to template generation
+      const fallbackResult = generateComponentCode(framework, componentName, description);
+      setOutput(fallbackResult);
+      toast.success('Component generated (template mode)', { id: loadingToast });
     }
 
     setIsGenerating(false);

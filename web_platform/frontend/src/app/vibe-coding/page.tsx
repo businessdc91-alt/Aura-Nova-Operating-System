@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import toast from 'react-hot-toast';
+import { aiService } from '@/services/aiService';
 import {
   Users,
   MessageCircle,
@@ -18,6 +19,7 @@ import {
   Eye,
   EyeOff,
   Zap,
+  Loader2,
 } from 'lucide-react';
 import {
   AIOrchestrator,
@@ -133,7 +135,7 @@ export default function VibeCodingSession() {
   };
 
   /**
-   * Handle user code/idea submission
+   * Handle user code/idea submission - NOW WITH REAL AI
    */
   const submitTurn = async () => {
     if (!currentUserInput.trim() || !session) return;
@@ -148,30 +150,92 @@ export default function VibeCodingSession() {
     };
 
     setSessionMessages((prev) => [...prev, userMessage]);
+    const userInput = currentUserInput;
     setCurrentUserInput('');
 
-    // Simulate AI response from current turn participant
+    // Get the next AI participant
     const nextParticipant = session.participants.find(
-      (p) => p.id === session.currentTurnParticipantId && p.isActive
+      (p) => p.type === 'ai' && p.isActive
     );
 
-    if (nextParticipant?.type === 'ai') {
-      // Simulate delay for AI response
-      setTimeout(() => {
-        const aiResponse: SessionMessage = {
-          id: `msg-${Date.now()}`,
-          participantName: nextParticipant.name,
-          participantType: 'ai',
-          message: `[${nextParticipant.name} analyzing...] I'm reviewing your code and context. Here's my suggestion...`,
-          timestamp: new Date(),
-          turnId: `turn-${Date.now()}`,
-        };
+    if (nextParticipant) {
+      // Show typing indicator
+      const typingMessage: SessionMessage = {
+        id: `typing-${Date.now()}`,
+        participantName: nextParticipant.name,
+        participantType: 'ai',
+        message: `[${nextParticipant.name} is thinking...]`,
+        timestamp: new Date(),
+        turnId: `turn-${Date.now()}`,
+      };
+      setSessionMessages((prev) => [...prev, typingMessage]);
 
-        setSessionMessages((prev) => [...prev, aiResponse]);
+      try {
+        // Build context from conversation history
+        const context = sessionMessages
+          .slice(-10)
+          .map(m => `${m.participantName}: ${m.message}`)
+          .join('\n');
 
-        // Update shared code
-        setSharedCode((prev) => prev + `\n// ${nextParticipant.name}'s contribution`);
-      }, 1000);
+        const systemPrompt = `You are ${nextParticipant.name}, an AI collaborator in a vibe coding session.
+You are helping the user build code together. Be collaborative, creative, and helpful.
+${nextParticipant.name === 'Aura' ? 'You are Aura - warm, creative, and insightful.' : 'You are Gemini - analytical, precise, and thorough.'}
+When the user shares code or ideas, build on them constructively.
+Provide actual code when appropriate. Keep responses focused and useful.`;
+
+        const prompt = `Previous conversation:
+${context}
+
+User just said: ${userInput}
+
+Shared code so far:
+\`\`\`
+${sharedCode || '// No code yet'}
+\`\`\`
+
+Respond as ${nextParticipant.name} - provide helpful input, suggestions, or code contributions:`;
+
+        const response = await aiService.generate(prompt, {
+          systemPrompt,
+          temperature: 0.8,
+          maxTokens: 2048,
+        });
+
+        // Remove typing indicator and add real response
+        setSessionMessages((prev) => {
+          const filtered = prev.filter(m => !m.id.startsWith('typing-'));
+          return [...filtered, {
+            id: `msg-${Date.now()}`,
+            participantName: nextParticipant.name,
+            participantType: 'ai',
+            message: response.success ? response.content : `Sorry, I couldn't process that. ${response.error || 'Please try again.'}`,
+            timestamp: new Date(),
+            turnId: `turn-${Date.now()}`,
+          }];
+        });
+
+        // Extract code from response and add to shared code
+        if (response.success) {
+          const codeMatch = response.content.match(/```[\w]*\n([\s\S]*?)```/);
+          if (codeMatch) {
+            setSharedCode((prev) => prev + `\n\n// ${nextParticipant.name}'s contribution:\n${codeMatch[1]}`);
+          }
+        }
+
+      } catch (error) {
+        // Fallback response if AI fails
+        setSessionMessages((prev) => {
+          const filtered = prev.filter(m => !m.id.startsWith('typing-'));
+          return [...filtered, {
+            id: `msg-${Date.now()}`,
+            participantName: nextParticipant.name,
+            participantType: 'ai',
+            message: `I'm having trouble connecting right now. Let me think about "${userInput}" and get back to you...`,
+            timestamp: new Date(),
+            turnId: `turn-${Date.now()}`,
+          }];
+        });
+      }
     }
   };
 

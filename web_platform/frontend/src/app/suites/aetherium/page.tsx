@@ -64,6 +64,18 @@ import {
 import { DailyChallengeWidget, WalletDisplay } from '@/components/challenges/DailyChallengeWidget';
 import { getWallet, spendCoins } from '@/services/currencyService';
 
+// Import TCG services
+import { 
+  PLATFORM_CHALLENGERS, 
+  RARITY_PRINT_COUNTS, 
+  COPIES_PER_DESIGN,
+  CardTemplate,
+  CardInstance,
+} from '@/services/aetheriumService';
+import { PRIME_CATALYST_DECK, getPrimeDeck } from '@/services/primeDeckService';
+import { STARTER_DECK_TEMPLATES, buildStarterDeck, claimStarterDeck } from '@/services/starterDeckService';
+import { EditionCardDisplay, CardDetailView, RARITY_COLORS, PRIME_COLORS } from '@/services/editionCardDisplay';
+
 // ============================================================================
 // AETHERIUM: CHRONICLES OF THE COGWORK REALM
 // ============================================================================
@@ -76,7 +88,7 @@ import { getWallet, spendCoins } from '@/services/currencyService';
 // ============================================================================
 
 // ================== CARD TYPES & ENUMS ==================
-type CardRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary' | 'mythic';
+type CardRarity = 'starter' | 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary' | 'mythic' | 'promo' | 'catalyst';
 type CardType = 'construct' | 'spell' | 'trap' | 'enchantment' | 'gear' | 'catalyst';
 type Faction = 'cogborn' | 'nanoswarm' | 'steamwright' | 'voidforge' | 'neutral';
 type Element = 'steam' | 'volt' | 'nano' | 'void' | 'chrome' | 'aether';
@@ -106,6 +118,10 @@ interface AetheriumCard {
   cardBackStyle?: 'default' | 'prime-reverse';
   attackBonus?: number; // used when gear/equipment
   defenseBonus?: number;
+  // Edition tracking
+  edition?: '1st' | '2nd';
+  printNumber?: number;
+  stars?: number; // Yu-Gi-Oh style star rating (1-12)
 }
 
 interface CardAbility {
@@ -1954,12 +1970,15 @@ const getTypeIcon = (type: CardType): React.ReactNode => {
 const RARITY_ORDER: CardRarity[] = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythic'];
 
 const DEFAULT_WEIGHTS: Record<CardRarity, number> = {
+  starter: 1.0,    // Starter deck cards (1-3 star, 800-1200 ATK)
   common: 0.62,
   uncommon: 0.24,
   rare: 0.1,
   epic: 0.03,
   legendary: 0.009,
   mythic: 0.001,
+  promo: 0,        // First 500 winners only - special reward
+  catalyst: 0,     // Your exclusive 50-card deck - not in packs
 };
 
 const PACK_CONFIGS: PackConfig[] = [
@@ -2032,12 +2051,15 @@ const findCardById = (id: string): AetheriumCard => {
 
 const buildRarityBuckets = (theme?: Faction | 'mixed'): Record<CardRarity, AetheriumCard[]> => {
   const buckets: Record<CardRarity, AetheriumCard[]> = {
+    starter: [],
     common: [],
     uncommon: [],
     rare: [],
     epic: [],
     legendary: [],
     mythic: [],
+    promo: [],
+    catalyst: [],
   };
 
   CARD_DATABASE.forEach((card) => {
@@ -2107,12 +2129,15 @@ const fulfillPackServerSide = async (
 
 const summarizeRarities = (cards: AetheriumCard[]): Record<CardRarity, number> => {
   const summary: Record<CardRarity, number> = {
+    starter: 0,
     common: 0,
     uncommon: 0,
     rare: 0,
     epic: 0,
     legendary: 0,
     mythic: 0,
+    promo: 0,
+    catalyst: 0,
   };
   cards.forEach((card) => { summary[card.rarity] = (summary[card.rarity] || 0) + 1; });
   return summary;
@@ -3531,10 +3556,14 @@ export default function AetheriumSuitePage() {
 
         {/* Navigation Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="bg-slate-900 border border-slate-800 p-1 justify-center">
+          <TabsList className="bg-slate-900 border border-slate-800 p-1 justify-center flex-wrap">
             <TabsTrigger value="play" className="data-[state=active]:bg-amber-600">
               <Swords size={16} className="mr-2" />
               Play
+            </TabsTrigger>
+            <TabsTrigger value="challengers" className="data-[state=active]:bg-purple-600">
+              <Crown size={16} className="mr-2" />
+              Challengers
             </TabsTrigger>
             <TabsTrigger value="deck" className="data-[state=active]:bg-amber-600">
               <Layers size={16} className="mr-2" />
@@ -3616,6 +3645,134 @@ export default function AetheriumSuitePage() {
               </Card>
 
               <GameBoard />
+            </div>
+          </TabsContent>
+
+          {/* Platform Challengers Tab */}
+          <TabsContent value="challengers">
+            <div className="space-y-6">
+              <Card className="bg-slate-900 border-slate-800">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center gap-2">
+                    <Crown className="text-amber-400" />
+                    Platform Challengers
+                  </CardTitle>
+                  <CardDescription className="text-slate-400">
+                    Defeat NPC challengers to earn Aether Coins and rare cards! Higher difficulty = better rewards.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {PLATFORM_CHALLENGERS.map((challenger) => (
+                      <div
+                        key={challenger.id}
+                        className={`
+                          rounded-lg border-2 p-4 transition-all hover:scale-102 cursor-pointer
+                          ${challenger.difficulty === 'novice' ? 'bg-gray-800/50 border-gray-600 hover:border-gray-400' : ''}
+                          ${challenger.difficulty === 'apprentice' ? 'bg-emerald-900/30 border-emerald-700 hover:border-emerald-500' : ''}
+                          ${challenger.difficulty === 'adept' ? 'bg-blue-900/30 border-blue-700 hover:border-blue-500' : ''}
+                          ${challenger.difficulty === 'master' ? 'bg-purple-900/30 border-purple-700 hover:border-purple-500' : ''}
+                          ${challenger.difficulty === 'architect' ? 'bg-gradient-to-br from-pink-900/40 to-purple-900/40 border-pink-500 hover:border-pink-400' : ''}
+                        `}
+                      >
+                        <div className="flex items-center gap-3 mb-3">
+                          <span className="text-3xl">{challenger.avatar}</span>
+                          <div>
+                            <h3 className="text-white font-bold">{challenger.name}</h3>
+                            <span className={`text-xs px-2 py-0.5 rounded capitalize
+                              ${challenger.difficulty === 'novice' ? 'bg-gray-700 text-gray-200' : ''}
+                              ${challenger.difficulty === 'apprentice' ? 'bg-emerald-800 text-emerald-200' : ''}
+                              ${challenger.difficulty === 'adept' ? 'bg-blue-800 text-blue-200' : ''}
+                              ${challenger.difficulty === 'master' ? 'bg-purple-800 text-purple-200' : ''}
+                              ${challenger.difficulty === 'architect' ? 'bg-pink-800 text-pink-200' : ''}
+                            `}>
+                              {challenger.difficulty}
+                            </span>
+                          </div>
+                        </div>
+                        <p className="text-slate-400 text-sm mb-3 italic">{challenger.flavorQuote}</p>
+                        <div className="space-y-1 text-xs">
+                          <div className="flex justify-between text-slate-300">
+                            <span>Win Reward:</span>
+                            <span className="text-amber-400">{challenger.winReward.coins} coins</span>
+                          </div>
+                          <div className="flex justify-between text-slate-300">
+                            <span>Card Drop:</span>
+                            <span className="text-emerald-400">{challenger.winReward.cardChance}%</span>
+                          </div>
+                          <div className="flex justify-between text-slate-300">
+                            <span>Card Rarity:</span>
+                            <span className="capitalize text-blue-300">{challenger.winReward.cardRarity}</span>
+                          </div>
+                        </div>
+                        <Button 
+                          className="w-full mt-4 bg-amber-600 hover:bg-amber-500"
+                          onClick={() => toast.success(`Challenge ${challenger.name} - Coming soon!`)}
+                        >
+                          Challenge
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* The Architect - Special Boss */}
+              <Card className="bg-gradient-to-br from-slate-900 via-purple-950/50 to-slate-900 border-2 border-amber-500">
+                <CardHeader>
+                  <CardTitle className="text-amber-400 flex items-center gap-2">
+                    👑 The Architect's Prime Challenge
+                  </CardTitle>
+                  <CardDescription className="text-slate-300">
+                    Defeat the platform owner to earn exclusive Prime Catalyst cards!
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <h4 className="text-white font-bold mb-2">Rules of Engagement</h4>
+                      <ul className="space-y-2 text-sm text-slate-300">
+                        <li className="flex items-start gap-2">
+                          <Trophy size={14} className="text-amber-400 mt-0.5" />
+                          Win: Earn 1 random Prime Catalyst card (reversed backing, mythic rarity)
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <Skull size={14} className="text-red-400 mt-0.5" />
+                          Lose: The Architect claims 2 cards from your collection
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <Star size={14} className="text-purple-400 mt-0.5" />
+                          Win 5 matches to join the platform development team
+                        </li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 className="text-white font-bold mb-2">Prime Deck Preview</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {PRIME_CATALYST_DECK.slice(0, 6).map((card) => (
+                          <div 
+                            key={card.id}
+                            className="w-16 h-20 rounded bg-gradient-to-b from-slate-800 to-purple-950 border border-amber-500/50 flex flex-col items-center justify-center text-center p-1"
+                          >
+                            <span className="text-lg">{card.artPlaceholder}</span>
+                            <span className="text-[7px] text-amber-200 truncate w-full">{card.name}</span>
+                          </div>
+                        ))}
+                        <div className="w-16 h-20 rounded bg-slate-800/50 border border-slate-700 flex items-center justify-center text-slate-500 text-xs">
+                          +{PRIME_CATALYST_DECK.length - 6} more
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <Button 
+                    className="w-full mt-6 bg-gradient-to-r from-amber-600 to-purple-600 hover:from-amber-500 hover:to-purple-500"
+                    onClick={() => toast.success('Challenge The Architect - Coming soon!')}
+                  >
+                    <Crown size={16} className="mr-2" />
+                    Challenge The Architect
+                  </Button>
+                </CardContent>
+              </Card>
             </div>
           </TabsContent>
 

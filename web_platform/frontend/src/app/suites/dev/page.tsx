@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import toast from 'react-hot-toast';
+import { aiService } from '@/services/aiService';
 import {
   Code,
   Terminal,
@@ -502,244 +503,75 @@ function ComponentConstructor() {
     setIsGenerating(true);
     toast.loading('Generating component...', { id: 'gen' });
 
-    // Simulate AI generation
-    await new Promise((r) => setTimeout(r, 1500));
+    try {
+      const extras = [];
+      if (includeStorybook) extras.push('Storybook stories');
+      if (includeTests) extras.push('unit tests with Jest/React Testing Library');
 
-    const componentName = prompt.split(' ').slice(0, 2).map(w => 
-      w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()
-    ).join('');
+      const result = await aiService.generate(
+        `Create a ${framework} component: ${prompt}${extras.length ? '. Also include: ' + extras.join(' and ') : ''}`,
+        {
+          systemPrompt: `You are an expert frontend developer. Generate a complete, production-ready ${framework} component.
 
-    let code = '';
-    if (framework === 'react') {
-      code = `import React, { useState } from 'react';
-import styles from './${componentName}.module.css';
+Requirements:
+- Use TypeScript with proper interfaces
+- Include proper prop types and defaults
+- Follow best practices for ${framework}
+- Use modern patterns (hooks for React, Composition API for Vue, etc.)
+- Add helpful comments
+- Make it accessible (ARIA attributes, keyboard navigation)
+${includeStorybook ? '- Include Storybook stories with different states' : ''}
+${includeTests ? '- Include comprehensive unit tests' : ''}
+
+Output ONLY the code, no explanations. Use clear section comments if including multiple files.`,
+          temperature: 0.7,
+          maxTokens: 2000,
+        }
+      );
+
+      if (result.success) {
+        setGeneratedCode(result.content);
+        toast.success('Component generated!', { id: 'gen' });
+      } else {
+        // Fallback to template if AI unavailable
+        const componentName = prompt.split(' ').slice(0, 2).map(w => 
+          w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()
+        ).join('') || 'MyComponent';
+
+        const fallbackCode = `// AI unavailable - here's a starter template for: ${prompt}
+import React, { useState } from 'react';
 
 interface ${componentName}Props {
   title?: string;
   onClick?: () => void;
-  className?: string;
   children?: React.ReactNode;
 }
 
 export const ${componentName}: React.FC<${componentName}Props> = ({
   title = 'Default Title',
   onClick,
-  className = '',
   children,
 }) => {
   const [isActive, setIsActive] = useState(false);
 
-  const handleClick = () => {
-    setIsActive(!isActive);
-    onClick?.();
-  };
-
   return (
-    <div 
-      className={\`\${styles.container} \${isActive ? styles.active : ''} \${className}\`}
-      onClick={handleClick}
-      role="button"
-      tabIndex={0}
-    >
-      <h3 className={styles.title}>{title}</h3>
-      <div className={styles.content}>
-        {children}
-      </div>
+    <div onClick={() => { setIsActive(!isActive); onClick?.(); }}>
+      <h3>{title}</h3>
+      <div>{children}</div>
     </div>
   );
 };
 
-export default ${componentName};`;
+export default ${componentName};
 
-      if (includeStorybook) {
-        code += `
-
-// ==================== STORYBOOK ====================
-// ${componentName}.stories.tsx
-
-import type { Meta, StoryObj } from '@storybook/react';
-import { ${componentName} } from './${componentName}';
-
-const meta: Meta<typeof ${componentName}> = {
-  title: 'Components/${componentName}',
-  component: ${componentName},
-  parameters: { layout: 'centered' },
-  tags: ['autodocs'],
-  argTypes: {
-    title: { control: 'text' },
-    onClick: { action: 'clicked' },
-  },
-};
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const Default: Story = {
-  args: {
-    title: 'Sample ${componentName}',
-    children: 'Content goes here',
-  },
-};
-
-export const Active: Story = {
-  args: {
-    title: 'Active State',
-    children: 'Click to toggle',
-  },
-};`;
+// Try running a local LLM for full AI-powered component generation!`;
+        setGeneratedCode(fallbackCode);
+        toast.success('Generated template (AI offline)', { id: 'gen' });
       }
-
-      if (includeTests) {
-        code += `
-
-// ==================== TESTS ====================
-// ${componentName}.test.tsx
-
-import { render, screen, fireEvent } from '@testing-library/react';
-import { ${componentName} } from './${componentName}';
-
-describe('${componentName}', () => {
-  it('renders with default props', () => {
-    render(<${componentName} />);
-    expect(screen.getByText('Default Title')).toBeInTheDocument();
-  });
-
-  it('renders with custom title', () => {
-    render(<${componentName} title="Custom Title" />);
-    expect(screen.getByText('Custom Title')).toBeInTheDocument();
-  });
-
-  it('calls onClick when clicked', () => {
-    const handleClick = jest.fn();
-    render(<${componentName} onClick={handleClick} />);
-    fireEvent.click(screen.getByRole('button'));
-    expect(handleClick).toHaveBeenCalledTimes(1);
-  });
-});`;
-      }
-    } else if (framework === 'vue') {
-      code = `<template>
-  <div 
-    :class="['container', { active: isActive }, className]"
-    @click="handleClick"
-    role="button"
-    tabindex="0"
-  >
-    <h3 class="title">{{ title }}</h3>
-    <div class="content">
-      <slot />
-    </div>
-  </div>
-</template>
-
-<script setup lang="ts">
-import { ref, defineProps, defineEmits } from 'vue';
-
-interface Props {
-  title?: string;
-  className?: string;
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  title: 'Default Title',
-  className: '',
-});
-
-const emit = defineEmits<{
-  (e: 'click'): void;
-}>();
-
-const isActive = ref(false);
-
-const handleClick = () => {
-  isActive.value = !isActive.value;
-  emit('click');
-};
-</script>
-
-<style scoped>
-.container {
-  padding: 1rem;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.container:hover {
-  border-color: #7c3aed;
-}
-
-.container.active {
-  background: #7c3aed;
-  color: white;
-}
-
-.title {
-  margin: 0 0 0.5rem;
-  font-size: 1.25rem;
-}
-
-.content {
-  font-size: 0.875rem;
-}
-</style>`;
-    } else if (framework === 'svelte') {
-      code = `<script lang="ts">
-  export let title = 'Default Title';
-  export let className = '';
-  
-  let isActive = false;
-  
-  function handleClick() {
-    isActive = !isActive;
-  }
-</script>
-
-<div 
-  class="container {isActive ? 'active' : ''} {className}"
-  on:click={handleClick}
-  on:keydown={(e) => e.key === 'Enter' && handleClick()}
-  role="button"
-  tabindex="0"
->
-  <h3 class="title">{title}</h3>
-  <div class="content">
-    <slot />
-  </div>
-</div>
-
-<style>
-  .container {
-    padding: 1rem;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-
-  .container:hover {
-    border-color: #7c3aed;
-  }
-
-  .container.active {
-    background: #7c3aed;
-    color: white;
-  }
-
-  .title {
-    margin: 0 0 0.5rem;
-    font-size: 1.25rem;
-  }
-
-  .content {
-    font-size: 0.875rem;
-  }
-</style>`;
+    } catch (error) {
+      toast.error('Error generating component', { id: 'gen' });
     }
 
-    setGeneratedCode(code);
-    toast.success('Component generated!', { id: 'gen' });
     setIsGenerating(false);
   };
 
@@ -858,46 +690,97 @@ function TheDojo() {
     setIsGenerating(true);
     toast.loading('Generating game code...', { id: 'dojo' });
 
-    await new Promise((r) => setTimeout(r, 1500));
+    const engineNames: Record<string, string> = {
+      unreal: 'Unreal Engine (C++)',
+      unity: 'Unity (C#)',
+      godot: 'Godot (GDScript)',
+      phaser: 'Phaser (JavaScript/TypeScript)',
+      love: 'LÖVE2D (Lua)',
+    };
 
-    const files: GeneratedFile[] = [];
+    const assetDescriptions: Record<string, string> = {
+      character: 'player character with movement, health, and basic abilities',
+      inventory: 'inventory system with items, slots, and equipment',
+      combat: 'combat system with attacks, damage, and effects',
+      ai: 'AI controller with states, pathfinding, and behaviors',
+      save: 'save/load system with serialization',
+    };
 
-    if (gameEngine === 'unreal') {
-      const template = UNREAL_TEMPLATES[assetType as keyof typeof UNREAL_TEMPLATES] || UNREAL_TEMPLATES.character;
-      const code = template.replace(/{ClassName}/g, className);
-      
-      files.push({
-        name: `${className}.h`,
-        content: code.split('// ' + className + '.cpp')[0],
-        language: 'cpp',
-      });
-      files.push({
-        name: `${className}.cpp`,
-        content: '// ' + className + '.cpp\n' + (code.split('// ' + className + '.cpp')[1] || ''),
-        language: 'cpp',
-      });
-    } else if (gameEngine === 'unity') {
-      const template = UNITY_TEMPLATES[assetType as keyof typeof UNITY_TEMPLATES] || UNITY_TEMPLATES.character;
-      const code = template.replace(/{ClassName}/g, className);
-      
-      files.push({
-        name: `${className}.cs`,
-        content: code,
-        language: 'csharp',
-      });
-    } else if (gameEngine === 'godot') {
-      const template = GODOT_TEMPLATES[assetType as keyof typeof GODOT_TEMPLATES] || GODOT_TEMPLATES.character;
-      const code = template.replace(/{ClassName}/g, className);
-      
-      files.push({
-        name: `${className.toLowerCase()}.gd`,
-        content: code,
-        language: 'gdscript',
-      });
+    try {
+      const result = await aiService.generate(
+        `Generate ${engineNames[gameEngine]} code for a ${assetDescriptions[assetType]}. Class name: ${className}. ${prompt ? `Additional requirements: ${prompt}` : ''}`,
+        {
+          systemPrompt: `You are an expert game developer. Generate production-ready ${engineNames[gameEngine]} code.
+
+Requirements:
+- Follow ${gameEngine} best practices and conventions
+- Include proper documentation comments
+- Add TODO comments for customization points
+- Make the code modular and extensible
+- Include all necessary imports/headers
+
+For Unreal: Generate both .h and .cpp files, separated by "// ${className}.cpp"
+For Unity: Generate a complete C# MonoBehaviour script
+For Godot: Generate a GDScript file extending the appropriate node type
+For Phaser: Generate a TypeScript/JavaScript scene or game object
+For LÖVE: Generate a Lua module
+
+Output ONLY the code, no explanations.`,
+          temperature: 0.7,
+          maxTokens: 2500,
+        }
+      );
+
+      const files: GeneratedFile[] = [];
+
+      if (result.success) {
+        const code = result.content;
+
+        if (gameEngine === 'unreal') {
+          const parts = code.split(/\/\/\s*\w+\.cpp/i);
+          files.push({
+            name: `${className}.h`,
+            content: parts[0]?.trim() || code,
+            language: 'cpp',
+          });
+          if (parts[1]) {
+            files.push({
+              name: `${className}.cpp`,
+              content: `// ${className}.cpp\n${parts[1].trim()}`,
+              language: 'cpp',
+            });
+          }
+        } else if (gameEngine === 'unity') {
+          files.push({ name: `${className}.cs`, content: code, language: 'csharp' });
+        } else if (gameEngine === 'godot') {
+          files.push({ name: `${className.toLowerCase()}.gd`, content: code, language: 'gdscript' });
+        } else if (gameEngine === 'phaser') {
+          files.push({ name: `${className}.ts`, content: code, language: 'typescript' });
+        } else if (gameEngine === 'love') {
+          files.push({ name: `${className.toLowerCase()}.lua`, content: code, language: 'lua' });
+        }
+      } else {
+        // Fallback to templates if AI unavailable
+        if (gameEngine === 'unreal') {
+          const template = UNREAL_TEMPLATES[assetType as keyof typeof UNREAL_TEMPLATES] || UNREAL_TEMPLATES.character;
+          const code = template.replace(/{ClassName}/g, className);
+          files.push({ name: `${className}.h`, content: code.split('// ' + className + '.cpp')[0], language: 'cpp' });
+          files.push({ name: `${className}.cpp`, content: '// ' + className + '.cpp\n' + (code.split('// ' + className + '.cpp')[1] || ''), language: 'cpp' });
+        } else if (gameEngine === 'unity') {
+          const template = UNITY_TEMPLATES[assetType as keyof typeof UNITY_TEMPLATES] || UNITY_TEMPLATES.character;
+          files.push({ name: `${className}.cs`, content: template.replace(/{ClassName}/g, className), language: 'csharp' });
+        } else if (gameEngine === 'godot') {
+          const template = GODOT_TEMPLATES[assetType as keyof typeof GODOT_TEMPLATES] || GODOT_TEMPLATES.character;
+          files.push({ name: `${className.toLowerCase()}.gd`, content: template.replace(/{ClassName}/g, className), language: 'gdscript' });
+        }
+      }
+
+      setGeneratedFiles(files);
+      toast.success(`Generated ${files.length} file(s)!`, { id: 'dojo' });
+    } catch (error) {
+      toast.error('Error generating code', { id: 'dojo' });
     }
 
-    setGeneratedFiles(files);
-    toast.success(`Generated ${files.length} file(s)!`, { id: 'dojo' });
     setIsGenerating(false);
   };
 
@@ -1246,61 +1129,81 @@ function CodeCorrection() {
     setIsAnalyzing(true);
     toast.loading('Analyzing code...', { id: 'analyze' });
 
-    await new Promise((r) => setTimeout(r, 1500));
+    try {
+      const result = await aiService.generate(code, {
+        systemPrompt: `You are an expert code reviewer. Analyze the provided code and return a JSON response with this structure:
+{
+  "issues": [
+    {"line": 1, "type": "error|warning|suggestion", "message": "description", "fix": "corrected line or null"}
+  ],
+  "correctedCode": "full corrected code",
+  "summary": "brief summary of issues found"
+}
 
-    // Simulate AI analysis
+Check for:
+- Syntax errors and bugs
+- Security vulnerabilities
+- Performance issues
+- Best practice violations
+- Code style issues
+- Potential null/undefined errors
+- Missing error handling
+
+Be thorough but practical. Return ONLY valid JSON.`,
+        temperature: 0.3,
+        maxTokens: 2000,
+      });
+
+      if (result.success) {
+        try {
+          const parsed = JSON.parse(result.content.replace(/```json?|```/g, '').trim());
+          setIssues(parsed.issues || []);
+          setCorrectedCode(parsed.correctedCode || code);
+          toast.success(`Found ${parsed.issues?.length || 0} issue(s)`, { id: 'analyze' });
+        } catch {
+          // Fallback to basic analysis
+          runBasicAnalysis();
+        }
+      } else {
+        runBasicAnalysis();
+      }
+    } catch {
+      runBasicAnalysis();
+    }
+
+    setIsAnalyzing(false);
+  };
+
+  const runBasicAnalysis = () => {
     const foundIssues: CodeIssue[] = [];
     const lines = code.split('\n');
 
     lines.forEach((line, idx) => {
-      // Check for common issues
       if (line.includes('var ')) {
-        foundIssues.push({
-          line: idx + 1,
-          type: 'warning',
-          message: 'Consider using "let" or "const" instead of "var"',
-          fix: line.replace('var ', 'const '),
-        });
+        foundIssues.push({ line: idx + 1, type: 'warning', message: 'Use "let" or "const" instead of "var"', fix: line.replace('var ', 'const ') });
       }
       if (line.includes('console.log')) {
-        foundIssues.push({
-          line: idx + 1,
-          type: 'suggestion',
-          message: 'Remove console.log before production',
-        });
+        foundIssues.push({ line: idx + 1, type: 'suggestion', message: 'Remove console.log before production' });
       }
       if (line.includes('== ') && !line.includes('===')) {
-        foundIssues.push({
-          line: idx + 1,
-          type: 'warning',
-          message: 'Use strict equality (===) instead of loose equality (==)',
-          fix: line.replace('== ', '=== '),
-        });
+        foundIssues.push({ line: idx + 1, type: 'warning', message: 'Use strict equality (===)', fix: line.replace('== ', '=== ') });
       }
       if (line.match(/catch\s*\(\s*\)/)) {
-        foundIssues.push({
-          line: idx + 1,
-          type: 'error',
-          message: 'Empty catch block - errors will be silently ignored',
-        });
+        foundIssues.push({ line: idx + 1, type: 'error', message: 'Empty catch block ignores errors' });
       }
     });
 
     setIssues(foundIssues);
-
-    // Generate corrected code
     let corrected = code;
     foundIssues.forEach((issue) => {
       if (issue.fix) {
-        const lines = corrected.split('\n');
-        lines[issue.line - 1] = issue.fix;
-        corrected = lines.join('\n');
+        const codeLines = corrected.split('\n');
+        codeLines[issue.line - 1] = issue.fix;
+        corrected = codeLines.join('\n');
       }
     });
     setCorrectedCode(corrected);
-
-    toast.success(`Found ${foundIssues.length} issue(s)`, { id: 'analyze' });
-    setIsAnalyzing(false);
+    toast.success(`Found ${foundIssues.length} issue(s) (basic analysis)`, { id: 'analyze' });
   };
 
   return (

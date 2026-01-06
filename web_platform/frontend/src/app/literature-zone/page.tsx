@@ -3,6 +3,7 @@
 import React, { useState, useRef } from 'react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
+import { aiService } from '@/services/aiService';
 import { 
   BookOpen, Music, Users, PenTool, Sparkles, ArrowRight,
   FileText, Save, Settings, Type, Bold, Italic, Highlighter, MessageCircle
@@ -492,19 +493,38 @@ function OldLiteratureZone() {
     setIsAIThinking(true);
 
     try {
-      // Placeholder for AI response logic
-      // In production: call actual API (Gemini, Claude, or local LLM)
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Get context from current document
+      const documentContext = document.content.slice(0, 2000); // Last 2000 chars for context
+      
+      const result = await aiService.generate(aiInput, {
+        systemPrompt: `You are a creative writing companion helping an author with their work. You're supportive, insightful, and offer constructive feedback.
+
+Current document title: "${document.title}"
+Document excerpt (for context):
+---
+${documentContext}
+---
+
+Help the author with their question or request. Be encouraging and specific in your suggestions.`,
+        temperature: 0.8,
+        maxTokens: 500,
+      });
 
       const assistantMessage: AIMessage = {
         role: 'assistant',
-        content: generateAIResponse(aiInput),
+        content: result.success ? result.content : generateAIResponse(aiInput),
         timestamp: new Date(),
       };
 
       setAiMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
       toast.error('AI companion error');
+      const fallbackMessage: AIMessage = {
+        role: 'assistant',
+        content: 'I\'m having trouble connecting. Try running a local LLM for offline writing assistance!',
+        timestamp: new Date(),
+      };
+      setAiMessages(prev => [...prev, fallbackMessage]);
     } finally {
       setIsAIThinking(false);
     }

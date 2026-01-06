@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import toast from 'react-hot-toast';
+import { aiService } from '@/services/aiService';
 import { DailyChallengeWidget, WalletDisplay } from '@/components/challenges/DailyChallengeWidget';
 import {
   Gamepad2,
@@ -118,41 +119,68 @@ function TriviaChallenge() {
     setSelectedAnswer(null);
     setShowResult(false);
 
-    await new Promise((r) => setTimeout(r, 1000));
+    try {
+      const topicText = topic.trim() || 'general knowledge';
+      const result = await aiService.generate(
+        `Generate a ${difficulty} trivia question about: ${topicText}`,
+        {
+          systemPrompt: `You are a trivia game master. Generate a single trivia question in this exact JSON format:
+{
+  "question": "the question text",
+  "options": ["option A", "option B", "option C", "option D"],
+  "correctIndex": 0-3,
+  "explanation": "brief explanation of the correct answer",
+  "category": "topic category"
+}
 
-    // Demo questions - in production, AI generates these
-    const demoQuestions: TriviaQuestion[] = [
-      {
-        id: '1',
-        question: `What programming concept allows objects to inherit properties from parent classes?`,
-        options: ['Polymorphism', 'Encapsulation', 'Inheritance', 'Abstraction'],
-        correctIndex: 2,
-        explanation: 'Inheritance allows a class to inherit properties and methods from a parent class, promoting code reuse.',
-        difficulty: 'medium',
-        category: 'Programming',
-      },
-      {
-        id: '2',
-        question: 'Which planet is known as the Red Planet?',
-        options: ['Venus', 'Mars', 'Jupiter', 'Saturn'],
-        correctIndex: 1,
-        explanation: 'Mars appears red due to iron oxide (rust) on its surface.',
-        difficulty: 'easy',
-        category: 'Science',
-      },
-      {
-        id: '3',
-        question: 'What is the time complexity of binary search?',
-        options: ['O(n)', 'O(n²)', 'O(log n)', 'O(1)'],
-        correctIndex: 2,
-        explanation: 'Binary search halves the search space with each comparison, resulting in logarithmic time complexity.',
-        difficulty: 'hard',
-        category: 'Algorithms',
-      },
-    ];
+Make the question ${difficulty} difficulty. Ensure exactly 4 options with only one correct answer.
+Output ONLY valid JSON, no markdown.`,
+          temperature: 0.8,
+          maxTokens: 500,
+        }
+      );
 
-    const question = demoQuestions[Math.floor(Math.random() * demoQuestions.length)];
-    setCurrentQuestion(question);
+      if (result.success) {
+        try {
+          const parsed = JSON.parse(result.content.replace(/```json?|```/g, '').trim());
+          setCurrentQuestion({
+            id: Date.now().toString(),
+            question: parsed.question,
+            options: parsed.options,
+            correctIndex: parsed.correctIndex,
+            explanation: parsed.explanation,
+            difficulty,
+            category: parsed.category || topicText,
+          });
+        } catch {
+          // Fallback question
+          setCurrentQuestion({
+            id: 'fallback',
+            question: 'What is the capital of France?',
+            options: ['London', 'Berlin', 'Paris', 'Madrid'],
+            correctIndex: 2,
+            explanation: 'Paris is the capital and largest city of France.',
+            difficulty: 'easy',
+            category: 'Geography',
+          });
+        }
+      } else {
+        // Fallback if AI unavailable
+        setCurrentQuestion({
+          id: 'demo',
+          question: 'Which data structure uses LIFO (Last In, First Out)?',
+          options: ['Queue', 'Stack', 'Array', 'Linked List'],
+          correctIndex: 1,
+          explanation: 'A Stack follows LIFO principle - the last element added is the first one removed.',
+          difficulty: 'medium',
+          category: 'Programming',
+        });
+        toast('Using demo question - AI unavailable', { icon: '⚠️' });
+      }
+    } catch (error) {
+      toast.error('Error generating question');
+    }
+
     setIsLoading(false);
   };
 

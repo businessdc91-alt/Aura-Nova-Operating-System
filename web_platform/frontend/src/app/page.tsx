@@ -84,7 +84,7 @@ const CREATIVE_TOOLS: ToolCard[] = [
   {
     title: 'Literature Zone',
     description: 'Music composer, poetry creator, and collaborative writing tools',
-    href: '/suites/art/literature-zone',
+    href: '/literature-zone',
     icon: PenTool,
     color: 'from-indigo-600 to-purple-600',
     status: 'ready',

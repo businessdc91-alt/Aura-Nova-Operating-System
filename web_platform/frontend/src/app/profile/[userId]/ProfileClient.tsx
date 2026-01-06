@@ -31,6 +31,11 @@ import {
   ExternalLink,
   Trophy,
   TrendingUp,
+  Bot,
+  Sparkles,
+  Cpu,
+  Package,
+  Zap,
 } from 'lucide-react';
 import { UserAvatar, PresenceIndicator, UserStatus } from '@/components/presence/PresenceIndicator';
 
@@ -59,6 +64,32 @@ interface UserProfile {
   badges: Badge[];
   socialLinks: SocialLink[];
   activity?: string;
+  // AI Companion Info
+  aiCompanion?: AICompanionProfile;
+}
+
+interface AICompanionProfile {
+  companionName: string;
+  preferredModelId: string;
+  preferredModelName: string;
+  modelUsageStats: {
+    totalInteractions: number;
+    hoursUsed: number;
+    lastUsed: Date;
+  };
+  trainingPackets: TrainingPacketInfo[];
+  companionPersonality?: string;
+  companionAvatar?: string;
+  bondLevel: number;
+}
+
+interface TrainingPacketInfo {
+  packetId: string;
+  name: string;
+  category: string;
+  rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary' | 'mythic';
+  earnedAt: Date;
+  knowledgePoints: number;
 }
 
 interface Badge {
@@ -109,6 +140,31 @@ const RARITY_COLORS = {
   rare: 'border-blue-500 bg-blue-900/20',
   epic: 'border-purple-500 bg-purple-900/20',
   legendary: 'border-amber-500 bg-amber-900/20',
+  mythic: 'border-pink-500 bg-pink-900/20',
+};
+
+const RARITY_TEXT_COLORS = {
+  common: 'text-slate-400',
+  uncommon: 'text-green-400',
+  rare: 'text-blue-400',
+  epic: 'text-purple-400',
+  legendary: 'text-amber-400',
+  mythic: 'text-pink-400',
+};
+
+const CATEGORY_ICONS: Record<string, string> = {
+  graphics: '🎨',
+  'game-engines': '🎮',
+  'web-dev': '🌐',
+  'ai-ml': '🧠',
+  systems: '⚙️',
+  creative: '✨',
+  blockchain: '⛓️',
+  security: '🔒',
+  data: '📊',
+  mobile: '📱',
+  devops: '🚀',
+  esoteric: '🔮',
 };
 
 // Demo data
@@ -181,6 +237,25 @@ const DEMO_USER: UserProfile = {
     { platform: 'Discord', url: '#', icon: '💬' },
   ],
   activity: 'Creating art in Art Studio',
+  // AI Companion Data
+  aiCompanion: {
+    companionName: 'Celeste',
+    preferredModelId: 'aura-gemma3',
+    preferredModelName: 'Aura Gemma 3 Pro',
+    modelUsageStats: {
+      totalInteractions: 15892,
+      hoursUsed: 423,
+      lastUsed: new Date(),
+    },
+    trainingPackets: [
+      { packetId: 'gfx-shader-magic', name: 'Advanced Shader Techniques', category: 'graphics', rarity: 'rare', earnedAt: new Date('2024-04-15'), knowledgePoints: 250 },
+      { packetId: 'ai-transformers', name: 'Transformer Architecture', category: 'ai-ml', rarity: 'rare', earnedAt: new Date('2024-03-20'), knowledgePoints: 280 },
+      { packetId: 'engine-unreal-bp', name: 'Unreal Blueprints', category: 'game-engines', rarity: 'common', earnedAt: new Date('2024-02-10'), knowledgePoints: 60 },
+      { packetId: 'web-react-patterns', name: 'React Advanced Patterns', category: 'web-dev', rarity: 'uncommon', earnedAt: new Date('2024-01-25'), knowledgePoints: 130 },
+    ],
+    companionPersonality: 'creative',
+    bondLevel: 78,
+  },
 };
 
 const DEMO_PORTFOLIO: PortfolioItem[] = [
@@ -449,6 +524,95 @@ export default function ProfileClient({ userId }: { userId: string }) {
                 </div>
               </CardContent>
             </Card>
+
+            {/* AI Companion */}
+            {profile.aiCompanion && (
+              <Card className="bg-slate-900 border-slate-800">
+                <CardHeader>
+                  <CardTitle className="text-white text-lg flex items-center gap-2">
+                    <Bot size={20} className="text-aura-400" />
+                    AI Companion
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Companion Info */}
+                  <div className="flex items-center gap-3">
+                    <div className="w-14 h-14 rounded-full bg-gradient-to-br from-aura-500 to-purple-600 flex items-center justify-center text-2xl">
+                      {profile.aiCompanion.companionAvatar || '🤖'}
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-white font-semibold">{profile.aiCompanion.companionName}</p>
+                      <p className="text-sm text-slate-400 flex items-center gap-1">
+                        <Cpu size={12} />
+                        {profile.aiCompanion.preferredModelName}
+                      </p>
+                      {profile.aiCompanion.companionPersonality && (
+                        <p className="text-xs text-aura-400 capitalize">
+                          {profile.aiCompanion.companionPersonality} personality
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Bond Level */}
+                  <div>
+                    <div className="flex items-center justify-between text-sm mb-1">
+                      <span className="text-slate-400 flex items-center gap-1">
+                        <Heart size={12} className="text-pink-400" /> Bond Level
+                      </span>
+                      <span className="text-white font-medium">{profile.aiCompanion.bondLevel}%</span>
+                    </div>
+                    <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-gradient-to-r from-pink-500 to-aura-500 rounded-full transition-all duration-500"
+                        style={{ width: `${profile.aiCompanion.bondLevel}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Usage Stats */}
+                  <div className="grid grid-cols-2 gap-2 text-center">
+                    <div className="bg-slate-800/50 rounded-lg p-2">
+                      <p className="text-lg font-bold text-white">
+                        {profile.aiCompanion.modelUsageStats.totalInteractions.toLocaleString()}
+                      </p>
+                      <p className="text-xs text-slate-400">Interactions</p>
+                    </div>
+                    <div className="bg-slate-800/50 rounded-lg p-2">
+                      <p className="text-lg font-bold text-white">
+                        {profile.aiCompanion.modelUsageStats.hoursUsed}h
+                      </p>
+                      <p className="text-xs text-slate-400">Hours Together</p>
+                    </div>
+                  </div>
+
+                  {/* Training Packets Preview */}
+                  {profile.aiCompanion.trainingPackets.length > 0 && (
+                    <div>
+                      <p className="text-sm text-slate-400 mb-2 flex items-center gap-1">
+                        <Package size={12} /> Training Packets ({profile.aiCompanion.trainingPackets.length})
+                      </p>
+                      <div className="flex flex-wrap gap-1">
+                        {profile.aiCompanion.trainingPackets.slice(0, 4).map((packet) => (
+                          <span
+                            key={packet.packetId}
+                            className={`px-2 py-1 rounded text-xs border ${RARITY_COLORS[packet.rarity]} ${RARITY_TEXT_COLORS[packet.rarity]}`}
+                            title={`${packet.name} - ${packet.knowledgePoints} KP`}
+                          >
+                            {CATEGORY_ICONS[packet.category] || '📦'} {packet.name.split(' ').slice(0, 2).join(' ')}
+                          </span>
+                        ))}
+                        {profile.aiCompanion.trainingPackets.length > 4 && (
+                          <span className="px-2 py-1 rounded text-xs bg-slate-800 text-slate-400">
+                            +{profile.aiCompanion.trainingPackets.length - 4} more
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           {/* Main Content Area */}
@@ -457,6 +621,9 @@ export default function ProfileClient({ userId }: { userId: string }) {
               <TabsList className="bg-slate-800 mb-4">
                 <TabsTrigger value="portfolio">Portfolio</TabsTrigger>
                 <TabsTrigger value="activity">Activity</TabsTrigger>
+                <TabsTrigger value="companion">
+                  <Bot size={14} className="mr-1" /> Companion
+                </TabsTrigger>
                 <TabsTrigger value="aetherium">Aetherium</TabsTrigger>
                 <TabsTrigger value="following">Following</TabsTrigger>
               </TabsList>
@@ -534,6 +701,174 @@ export default function ProfileClient({ userId }: { userId: string }) {
                     </div>
                   ))}
                 </div>
+              </TabsContent>
+
+              {/* AI Companion Full Tab */}
+              <TabsContent value="companion">
+                {profile.aiCompanion ? (
+                  <div className="space-y-6">
+                    {/* Companion Overview */}
+                    <Card className="bg-gradient-to-br from-slate-900 to-purple-900/30 border-aura-500/30">
+                      <CardContent className="p-6">
+                        <div className="flex items-center gap-6">
+                          <div className="w-24 h-24 rounded-full bg-gradient-to-br from-aura-500 to-purple-600 flex items-center justify-center text-4xl shadow-lg shadow-aura-500/30">
+                            {profile.aiCompanion.companionAvatar || '🤖'}
+                          </div>
+                          <div className="flex-1">
+                            <h2 className="text-2xl font-bold text-white">{profile.aiCompanion.companionName}</h2>
+                            <p className="text-slate-400 flex items-center gap-2 mt-1">
+                              <Cpu size={16} className="text-aura-400" />
+                              Powered by {profile.aiCompanion.preferredModelName}
+                            </p>
+                            {profile.aiCompanion.companionPersonality && (
+                              <span className="inline-block mt-2 px-3 py-1 rounded-full bg-aura-500/20 text-aura-400 text-sm capitalize">
+                                {profile.aiCompanion.companionPersonality} personality
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-right">
+                            <div className="text-3xl font-bold text-white">{profile.aiCompanion.bondLevel}%</div>
+                            <div className="text-sm text-pink-400">Bond Level</div>
+                            <div className="w-32 h-2 bg-slate-800 rounded-full mt-2 overflow-hidden">
+                              <div 
+                                className="h-full bg-gradient-to-r from-pink-500 to-aura-500"
+                                style={{ width: `${profile.aiCompanion.bondLevel}%` }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-3 gap-4">
+                      <Card className="bg-slate-900 border-slate-800">
+                        <CardContent className="p-4 text-center">
+                          <Sparkles className="w-8 h-8 text-amber-400 mx-auto mb-2" />
+                          <p className="text-2xl font-bold text-white">
+                            {profile.aiCompanion.modelUsageStats.totalInteractions.toLocaleString()}
+                          </p>
+                          <p className="text-sm text-slate-400">Total Interactions</p>
+                        </CardContent>
+                      </Card>
+                      <Card className="bg-slate-900 border-slate-800">
+                        <CardContent className="p-4 text-center">
+                          <Zap className="w-8 h-8 text-green-400 mx-auto mb-2" />
+                          <p className="text-2xl font-bold text-white">
+                            {profile.aiCompanion.modelUsageStats.hoursUsed}h
+                          </p>
+                          <p className="text-sm text-slate-400">Hours Together</p>
+                        </CardContent>
+                      </Card>
+                      <Card className="bg-slate-900 border-slate-800">
+                        <CardContent className="p-4 text-center">
+                          <Package className="w-8 h-8 text-purple-400 mx-auto mb-2" />
+                          <p className="text-2xl font-bold text-white">
+                            {profile.aiCompanion.trainingPackets.length}
+                          </p>
+                          <p className="text-sm text-slate-400">Training Packets</p>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    {/* Training Packets Full Display */}
+                    <Card className="bg-slate-900 border-slate-800">
+                      <CardHeader>
+                        <CardTitle className="text-white flex items-center gap-2">
+                          <Package className="text-aura-400" size={20} />
+                          Training Packets & Specializations
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        {profile.aiCompanion.trainingPackets.length > 0 ? (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {profile.aiCompanion.trainingPackets.map((packet) => (
+                              <div
+                                key={packet.packetId}
+                                className={`p-4 rounded-lg border ${RARITY_COLORS[packet.rarity]} hover:scale-[1.02] transition-transform cursor-pointer`}
+                              >
+                                <div className="flex items-start gap-3">
+                                  <span className="text-3xl">{CATEGORY_ICONS[packet.category] || '📦'}</span>
+                                  <div className="flex-1">
+                                    <h4 className="font-semibold text-white">{packet.name}</h4>
+                                    <p className="text-sm text-slate-400 capitalize">{packet.category.replace('-', ' ')}</p>
+                                    <div className="flex items-center gap-3 mt-2">
+                                      <span className={`text-xs px-2 py-0.5 rounded capitalize ${RARITY_TEXT_COLORS[packet.rarity]}`}>
+                                        {packet.rarity}
+                                      </span>
+                                      <span className="text-xs text-amber-400">
+                                        +{packet.knowledgePoints} KP
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                                <p className="text-xs text-slate-500 mt-2">
+                                  Earned {new Date(packet.earnedAt).toLocaleDateString()}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-center py-8 text-slate-400">
+                            <Package size={48} className="mx-auto mb-4 opacity-50" />
+                            <p>No training packets yet</p>
+                            <p className="text-sm mt-1">Complete challenges to earn specializations!</p>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+
+                    {/* Knowledge Summary */}
+                    <Card className="bg-slate-900 border-slate-800">
+                      <CardHeader>
+                        <CardTitle className="text-white flex items-center gap-2">
+                          <Trophy className="text-amber-400" size={20} />
+                          Knowledge Summary
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-3">
+                          {Object.entries(
+                            profile.aiCompanion.trainingPackets.reduce((acc, p) => {
+                              acc[p.category] = (acc[p.category] || 0) + p.knowledgePoints;
+                              return acc;
+                            }, {} as Record<string, number>)
+                          ).map(([category, points]) => (
+                            <div key={category}>
+                              <div className="flex items-center justify-between text-sm mb-1">
+                                <span className="text-slate-300 flex items-center gap-2">
+                                  {CATEGORY_ICONS[category] || '📦'}
+                                  <span className="capitalize">{category.replace('-', ' ')}</span>
+                                </span>
+                                <span className="text-amber-400 font-medium">{points} KP</span>
+                              </div>
+                              <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
+                                <div 
+                                  className="h-full bg-gradient-to-r from-amber-500 to-orange-500 rounded-full"
+                                  style={{ width: `${Math.min((points / 500) * 100, 100)}%` }}
+                                />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="mt-4 pt-4 border-t border-slate-800 flex items-center justify-between">
+                          <span className="text-slate-300">Total Knowledge Points</span>
+                          <span className="text-2xl font-bold text-amber-400">
+                            {profile.aiCompanion.trainingPackets.reduce((sum, p) => sum + p.knowledgePoints, 0).toLocaleString()} KP
+                          </span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                ) : (
+                  <Card className="bg-slate-900 border-slate-800">
+                    <CardContent className="p-8 text-center">
+                      <Bot size={64} className="mx-auto mb-4 text-aura-400 opacity-50" />
+                      <h3 className="text-xl font-semibold text-white mb-2">No AI Companion Yet</h3>
+                      <p className="text-slate-400 mb-4">This user hasn't set up their AI companion</p>
+                    </CardContent>
+                  </Card>
+                )}
               </TabsContent>
 
               <TabsContent value="aetherium">

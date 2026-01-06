@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Plus, Download, Save, Settings, Trash2, Share2, Wand2, Palette, Film } from 'lucide-react';
+import { Plus, Download, Save, Settings, Trash2, Share2, Wand2, Palette, Film, Eye, EyeOff } from 'lucide-react';
 import { AvatarService, Avatar, AvatarBody, AvatarPose } from '@/services/avatarService';
 import { ClothingCreatorService, ClothingItem } from '@/services/clothingCreatorService';
 import { HairService } from '@/services/hairService';
@@ -11,6 +11,19 @@ import HairMakeupEditor from '@/components/avatar/HairMakeupEditor';
 import PoseEditor from '@/components/avatar/PoseEditor';
 import AnimationPreview from '@/components/avatar/AnimationPreview';
 import toast from 'react-hot-toast';
+
+// Layer visibility type for paper doll system
+interface LayerVisibility {
+  top: boolean;
+  bottom: boolean;
+  shoes: boolean;
+  coat: boolean;
+  hat: boolean;
+  accessory: boolean;
+  hair: boolean;
+  face: boolean;
+  body: boolean;
+}
 
 export default function AvatarBuilderPage() {
   // ============== STATE ==============
@@ -28,6 +41,19 @@ export default function AvatarBuilderPage() {
   const [selectedClothingType, setSelectedClothingType] = useState<string>('top');
   const [selectedPoseCategory, setSelectedPoseCategory] = useState<string>('idle');
   const [selectedAnimation, setSelectedAnimation] = useState(AnimationService.getIdleAnimations()[0]);
+  
+  // Layer visibility for paper doll (LAYERED DOLLS FEATURE)
+  const [layerVisibility, setLayerVisibility] = useState<LayerVisibility>({
+    top: true,
+    bottom: true,
+    shoes: true,
+    coat: true,
+    hat: true,
+    accessory: true,
+    hair: true,
+    face: true,
+    body: true,
+  });
 
   // Avatar customization
   const [facialFeatures, setFacialFeatures] = useState<FacialFeatures>(FacialFeaturesService.createDefaultFeatures());
@@ -85,32 +111,53 @@ export default function AvatarBuilderPage() {
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Draw body
-    drawAvatarBody(ctx, currentAvatar.body, canvas);
+    // Draw body (respects visibility)
+    if (layerVisibility.body) {
+      drawAvatarBody(ctx, currentAvatar.body, canvas);
+    }
 
-    // Draw facial features (eyes, nose, lips)
-    drawFacialFeatures(ctx, facialFeatures, canvas);
+    // Draw facial features (respects visibility)
+    if (layerVisibility.face) {
+      drawFacialFeatures(ctx, facialFeatures, canvas);
+    }
 
-    // Draw hair
-    drawHair(ctx, avatarHair, currentAvatar.body, canvas);
+    // Draw hair (respects visibility)
+    if (layerVisibility.hair) {
+      drawHair(ctx, avatarHair, currentAvatar.body, canvas);
+    }
 
-    // Draw clothing layers
-    if (currentAvatar.clothingLayers.bottom) {
+    // Draw clothing layers (respects visibility for each layer)
+    if (currentAvatar.clothingLayers.bottom && layerVisibility.bottom) {
       ctx.fillStyle = '#333333';
       ctx.fillRect(140, 300, 232, 120);
     }
 
-    if (currentAvatar.clothingLayers.top) {
+    if (currentAvatar.clothingLayers.top && layerVisibility.top) {
       ctx.fillStyle = '#4ECDC4';
       ctx.fillRect(120, 200, 272, 120);
     }
 
-    if (currentAvatar.clothingLayers.shoes) {
+    if (currentAvatar.clothingLayers.shoes && layerVisibility.shoes) {
       ctx.fillStyle = '#2C3E50';
       ctx.fillRect(150, 420, 100, 50);
       ctx.fillRect(262, 420, 100, 50);
     }
   };
+
+  // Toggle layer visibility
+  const toggleLayer = (layer: keyof LayerVisibility) => {
+    setLayerVisibility(prev => ({
+      ...prev,
+      [layer]: !prev[layer]
+    }));
+  };
+
+  // Re-render when visibility changes
+  useEffect(() => {
+    if (currentAvatar) {
+      renderAvatar();
+    }
+  }, [layerVisibility]);
 
   const drawFacialFeatures = (
     ctx: CanvasRenderingContext2D,
@@ -765,6 +812,40 @@ export default function AvatarBuilderPage() {
             >
               Design Clothing
             </a>
+            
+            {/* LAYER VISIBILITY TOGGLES - Paper Doll Feature */}
+            <div className="mt-4 border-t border-slate-700 pt-4">
+              <h4 className="text-xs font-bold text-slate-300 mb-2 flex items-center gap-2">
+                <Eye className="w-3 h-3" />
+                Layer Visibility
+              </h4>
+              <div className="grid grid-cols-3 gap-1">
+                {Object.entries(layerVisibility).map(([layer, visible]) => (
+                  <button
+                    key={layer}
+                    onClick={() => toggleLayer(layer as keyof LayerVisibility)}
+                    className={`px-2 py-1 text-xs rounded flex items-center justify-center gap-1 transition-all ${
+                      visible 
+                        ? 'bg-green-600/30 text-green-400 border border-green-600/50' 
+                        : 'bg-slate-800 text-slate-500 border border-slate-700'
+                    }`}
+                    title={`Toggle ${layer} visibility`}
+                  >
+                    {visible ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                    <span className="capitalize">{layer}</span>
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => setLayerVisibility({
+                  top: true, bottom: true, shoes: true, coat: true,
+                  hat: true, accessory: true, hair: true, face: true, body: true
+                })}
+                className="mt-2 w-full px-2 py-1 text-xs bg-slate-700 hover:bg-slate-600 rounded transition-colors"
+              >
+                Show All Layers
+              </button>
+            </div>
           </div>
 
           {/* Poses */}

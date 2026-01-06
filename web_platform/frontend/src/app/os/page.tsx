@@ -8,10 +8,14 @@ import { AITicTacToe } from '@/components/games/AITicTacToe';
 import { AICheckers } from '@/components/games/AICheckers';
 import { AIChess } from '@/components/games/AIChess';
 import { CodingSandbox } from '@/components/sandbox/CodingSandbox';
+import { AISetupGuide } from '@/components/AISetupGuide';
+import { SocialFeed } from '@/components/social/SocialFeed';
+import { Messenger } from '@/components/social/Messenger';
+import { LLMSetupWizard } from '@/components/llm/LLMSetupWizard';
 import {
   FolderOpen, Music, PenTool, Users, Gamepad2, Code, Settings,
   Palette, BookOpen, MessageSquare, Sparkles, Grid3X3, Crown, Brain,
-  Mail
+  Mail, Bot, Share2
 } from 'lucide-react';
 import {
   getUserSettings,
@@ -20,6 +24,7 @@ import {
   saveLocalSettings,
 } from '@/services/userSettingsService';
 import { MessengerApp } from '@/components/os/MessengerApp';
+import { llmService } from '@/services/llmService';
 
 type WallpaperOption = {
   name: string;
@@ -58,15 +63,15 @@ const wallpaperOptions: WallpaperOption[] = [
 
 // App wrapper components for embedding existing pages
 const MusicComposerApp = () => (
-  <iframe src="/suites/art/music-composer" className="w-full h-full border-0" />
+  <iframe src="/music-composer" className="w-full h-full border-0" />
 );
 
 const PoemsCreatorApp = () => (
-  <iframe src="/suites/art/poems-creator" className="w-full h-full border-0" />
+  <iframe src="/poems-creator" className="w-full h-full border-0" />
 );
 
 const CollaborativeWritingApp = () => (
-  <iframe src="/suites/art/collaborative-writing" className="w-full h-full border-0" />
+  <iframe src="/collaborative-writing" className="w-full h-full border-0" />
 );
 
 const ArtStudioApp = () => (
@@ -211,6 +216,14 @@ const GamesHubApp = () => (
 // Define all desktop apps
 const desktopApps = [
   {
+    id: 'ai-setup',
+    name: 'AI Setup',
+    icon: <Bot className="w-6 h-6" />,
+    component: <AISetupGuide />,
+    defaultWidth: 550,
+    defaultHeight: 700,
+  },
+  {
     id: 'file-manager',
     name: 'Files',
     icon: <FolderOpen className="w-6 h-6" />,
@@ -294,9 +307,17 @@ const desktopApps = [
     id: 'messenger',
     name: 'Messenger',
     icon: <Mail className="w-6 h-6" />,
-    component: <MessengerApp />,
-    defaultWidth: 700,
-    defaultHeight: 550,
+    component: <Messenger />,
+    defaultWidth: 800,
+    defaultHeight: 600,
+  },
+  {
+    id: 'social-feed',
+    name: 'Social',
+    icon: <Share2 className="w-6 h-6" />,
+    component: <SocialFeed />,
+    defaultWidth: 600,
+    defaultHeight: 700,
   },
   {
     id: 'games-hub',
@@ -451,6 +472,7 @@ export default function OSPage() {
   const isMobile = useIsMobile();
   const [isLoaded, setIsLoaded] = useState(false);
   const [wallpaper, setWallpaper] = useState<WallpaperOption>(wallpaperOptions[0]);
+  const [showLLMWizard, setShowLLMWizard] = useState(false);
 
   // Placeholder user id (replace with auth in production)
   const userId = 'guest';
@@ -505,8 +527,19 @@ export default function OSPage() {
 
   useEffect(() => {
     // Boot animation
-    const timer = setTimeout(() => setIsLoaded(true), 500);
+    const timer = setTimeout(() => {
+      setIsLoaded(true);
+      // Check if LLM setup wizard should be shown on first run
+      if (llmService.shouldShowSetupWizard()) {
+        setShowLLMWizard(true);
+      }
+    }, 500);
     return () => clearTimeout(timer);
+  }, []);
+
+  // Handle wizard completion
+  const handleWizardComplete = useCallback(() => {
+    setShowLLMWizard(false);
   }, []);
 
   // Boot Screen
@@ -518,12 +551,17 @@ export default function OSPage() {
           <h1 className="text-3xl font-bold text-white mb-2">AuraNova OS</h1>
           <p className="text-slate-400">Loading your creative workspace...</p>
           <div className="mt-8 w-48 h-1 bg-slate-800 rounded-full overflow-hidden mx-auto">
-            <div className="h-full bg-gradient-to-r from-purple-500 to-pink-500 animate-[loading_1s_ease-in-out_infinite]" 
+            <div className="h-full bg-gradient-to-r from-purple-500 to-pink-500 animate-[loading_1s_ease-in-out_infinite]"
                  style={{ width: '50%' }} />
           </div>
         </div>
       </div>
     );
+  }
+
+  // LLM Setup Wizard (first-run experience)
+  if (showLLMWizard) {
+    return <LLMSetupWizard onComplete={handleWizardComplete} />;
   }
 
   // Mobile: Show mobile OS view
@@ -534,7 +572,7 @@ export default function OSPage() {
   // Desktop: Show full windowed OS
   return (
     <WindowManagerProvider>
-      <DesktopEnvironment 
+      <DesktopEnvironment
         apps={apps}
         wallpaper={wallpaper.background}
         wallpaperClass={wallpaper.className}
