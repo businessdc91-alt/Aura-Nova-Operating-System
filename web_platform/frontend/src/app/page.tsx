@@ -125,12 +125,12 @@ const COMMUNITY_FEATURES: ToolCard[] = [
     status: 'beta',
   },
   {
-    title: 'Community',
-    description: 'Connect with other creators, share work, and get feedback',
-    href: '/community',
+    title: 'Social Network',
+    description: 'Connect with creators, share work, join groups, and participate in events',
+    href: '/social',
     icon: MessageSquare,
     color: 'from-green-600 to-emerald-600',
-    status: 'coming-soon',
+    status: 'ready',
   },
   {
     title: 'Leaderboards',
@@ -162,10 +162,10 @@ const ADVANCED_TOOLS: ToolCard[] = [
   {
     title: 'Aetherium TCG',
     description: '800-card trading card game with procedural generation',
-    href: '/aetherium',
+    href: '/suites/aetherium',
     icon: Sparkles,
     color: 'from-pink-600 to-rose-600',
-    status: 'coming-soon',
+    status: 'ready',
   },
 ];
 
