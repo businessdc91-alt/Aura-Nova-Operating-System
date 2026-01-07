@@ -27,6 +27,7 @@ import {
   LogOut,
 } from 'lucide-react';
 import { io, Socket } from 'socket.io-client';
+import { aiService } from '@/services/aiService';
 
 // ============== TYPES ==============
 interface User {
@@ -35,6 +36,7 @@ interface User {
   avatar?: string;
   status: 'online' | 'away' | 'busy' | 'offline';
   activity?: string;
+  isAI?: boolean;
 }
 
 interface ChatMessage {
@@ -94,12 +96,32 @@ export default function ChatPage() {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
+  const [aiAssistantEnabled, setAiAssistantEnabled] = useState(false);
+  const [companionEnabled, setCompanionEnabled] = useState(false);
 
   // Demo user (in production, get from auth)
   const currentUser = {
     userId: 'user_' + Math.random().toString(36).substr(2, 9),
     username: 'Catalyst_' + Math.floor(Math.random() * 1000),
     avatar: undefined,
+  };
+
+  // Personal Companion user (simplified for now - full integration coming)
+  const companionUser: User = {
+    userId: `companion-${currentUser.userId}`,
+    username: '🐲 My Companion',
+    status: 'online',
+    isAI: true,
+    activity: 'Personal AI Companion',
+  };
+
+  // Aura AI - The platform's shared AI assistant
+  const aiAssistant: User = {
+    userId: 'ai-aura-assistant',
+    username: '🤖 Aura AI',
+    status: 'online',
+    isAI: true,
+    activity: 'Platform AI Assistant',
   };
 
   useEffect(() => {
@@ -222,28 +244,144 @@ export default function ChatPage() {
     }
   };
 
-  const sendMessage = () => {
+  const sendMessage = async () => {
     if (!socket || !activeChannel || !messageInput.trim()) return;
+
+    const messageContent = messageInput;
+    setMessageInput('');
 
     if (editingMessage) {
       socket.emit('message:edit', {
         messageId: editingMessage.id,
         channelId: activeChannel.id,
-        content: messageInput,
+        content: messageContent,
       });
       setEditingMessage(null);
     } else {
       socket.emit('message:send', {
         channelId: activeChannel.id,
-        content: messageInput,
+        content: messageContent,
         type: 'text',
         replyTo: replyingTo?.id,
       });
       setReplyingTo(null);
+
+      // Check if Aura AI should respond
+      if (aiAssistantEnabled && (messageContent.toLowerCase().includes('@aura') || messageContent.toLowerCase().includes('aura ai'))) {
+        handleAIResponse(messageContent, aiAssistant, 'Aura AI');
+      }
+
+      // Check if user's companion should respond
+      if (companionEnabled && messageContent.toLowerCase().includes('@companion')) {
+        handleAIResponse(messageContent, companionUser, 'Companion');
+      }
     }
 
-    setMessageInput('');
     socket.emit('typing:stop', activeChannel.id);
+  };
+
+  const handleAIResponse = async (userMessage: string, aiUser: User, type: 'Aura AI' | 'Companion') => {
+    if (!activeChannel) return;
+
+    // Add "AI is typing" indicator
+    setTypingUsers([{ userId: aiUser.userId, username: aiUser.username }]);
+
+    try {
+      const systemPrompt = type === 'Aura AI'
+        ? `You are Aura AI, the platform's shared assistant. Be helpful and friendly. Users are discussing creative projects, coding, and art. Keep responses under 200 words.`
+        : `You are the user's personal AI companion. Be supportive, encouraging, and personalized. Keep responses under 200 words.`;
+
+      const response = await aiService.chat(userMessage, {
+        systemPrompt,
+        temperature: 0.8,
+      });
+
+      // Remove typing indicator
+      setTypingUsers([]);
+
+      // Add AI message to chat
+      const aiMessage: ChatMessage = {
+        id: `${type === 'Aura AI' ? 'aura' : 'companion'}-${Date.now()}`,
+        channelId: activeChannel.id,
+        userId: aiUser.userId,
+        username: aiUser.username,
+        content: response.success ? response.content : `👋 Hi! To use AI features, please set up your AI service (LM Studio, Ollama, or configure API keys in Settings).`,
+        timestamp: new Date(),
+        type: 'text',
+      };
+
+      setMessages((prev) => [...prev, aiMessage]);
+      toast.success(`${type} responded!`, { icon: type === 'Aura AI' ? '🤖' : '🐲' });
+    } catch (error) {
+      setTypingUsers([]);
+      console.error(`${type} response error:`, error);
+    }
+  };
+
+  const toggleAIAssistant = () => {
+    setAiAssistantEnabled(!aiAssistantEnabled);
+
+    if (!aiAssistantEnabled) {
+      toast.success('🤖 Aura AI joined the chat! Mention @aura to get responses', { duration: 4000 });
+
+      // Add AI to online users
+      setOnlineUsers((prev) => {
+        if (!prev.find(u => u.userId === aiAssistant.userId)) {
+          return [...prev, aiAssistant];
+        }
+        return prev;
+      });
+
+      // Send welcome message from AI
+      if (activeChannel) {
+        const welcomeMessage: ChatMessage = {
+          id: `ai-welcome-${Date.now()}`,
+          channelId: activeChannel.id,
+          userId: aiAssistant.userId,
+          username: aiAssistant.username,
+          content: '👋 Hi everyone! I\'m Aura AI, your platform assistant. Mention me with @aura and I\'ll help out!',
+          timestamp: new Date(),
+          type: 'system',
+        };
+        setMessages((prev) => [...prev, welcomeMessage]);
+      }
+    } else {
+      toast('🤖 Aura AI left the chat');
+      setOnlineUsers((prev) => prev.filter(u => u.userId !== aiAssistant.userId));
+    }
+  };
+
+  const toggleCompanion = () => {
+    setCompanionEnabled(!companionEnabled);
+
+    if (!companionEnabled) {
+      toast.success('🐲 Your Companion joined! Mention @companion to chat', { duration: 4000 });
+
+      // Add companion to online users
+      setOnlineUsers((prev) => {
+        if (!prev.find(u => u.userId === companionUser.userId)) {
+          return [...prev, companionUser];
+        }
+        return prev;
+      });
+
+      // Send welcome message from companion
+      if (activeChannel) {
+        const welcomeMessage: ChatMessage = {
+          id: `companion-welcome-${Date.now()}`,
+          channelId: activeChannel.id,
+          userId: companionUser.userId,
+          username: companionUser.username,
+          content: '👋 Hello! I\'m your personal companion. I\'m here just for you! Mention me with @companion and we can chat!',
+          timestamp: new Date(),
+          type: 'system',
+        };
+        setMessages((prev) => [...prev, welcomeMessage]);
+      }
+    } else {
+      toast('🐲 Your companion left the chat');
+      setOnlineUsers((prev) => prev.filter(u => u.userId !== companionUser.userId));
+    }
   };
 
   const handleTyping = (value: string) => {
@@ -463,6 +601,28 @@ export default function ChatPage() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
+                <button
+                  onClick={toggleAIAssistant}
+                  className={`px-3 py-1.5 rounded text-sm font-medium transition ${
+                    aiAssistantEnabled
+                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
+                      : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                  }`}
+                  title="Aura AI (Platform AI)"
+                >
+                  🤖 {aiAssistantEnabled ? 'Aura Active' : '+ Aura AI'}
+                </button>
+                <button
+                  onClick={toggleCompanion}
+                  className={`px-3 py-1.5 rounded text-sm font-medium transition ${
+                    companionEnabled
+                      ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white'
+                      : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                  }`}
+                  title="Your Personal Companion"
+                >
+                  🐲 {companionEnabled ? 'Active' : '+ Companion'}
+                </button>
                 <button
                   onClick={() => setShowUserList(!showUserList)}
                   className={`p-2 rounded ${showUserList ? 'bg-slate-700' : ''} text-slate-400 hover:text-white`}
