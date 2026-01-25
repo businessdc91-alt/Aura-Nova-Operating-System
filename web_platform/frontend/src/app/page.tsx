@@ -2,413 +2,224 @@
 
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Card } from '@/components/ui/card';
 import {
-  Gamepad2,
-  Palette,
-  Boxes,
-  Combine,
-  FolderKanban,
-  Code2,
-  Sparkles,
-  Zap,
-  Users,
-  Trophy,
-  MessageSquare,
-  Store,
-  FlaskConical,
-  BookOpen,
-  Rocket,
-  ArrowRight,
   Monitor,
-  Brain,
-  Music,
-  PenTool,
-  HelpCircle,
-  Compass,
-  Bot,
-  GraduationCap,
-  Map,
+  ShoppingCart,
+  Info,
+  Globe,
+  ArrowRight,
+  Zap,
+  Cpu,
+  Cog,
+  Codesandbox,
+  Sparkles
 } from 'lucide-react';
-
-interface ToolCard {
-  title: string;
-  description: string;
-  href: string;
-  icon: React.ComponentType<{ size?: string | number; className?: string }>;
-  color: string;
-  status: 'ready' | 'coming-soon' | 'beta';
-}
-
-const CREATIVE_TOOLS: ToolCard[] = [
-  {
-    title: 'OS Mode',
-    description: 'Full desktop experience with windowed apps, taskbar, and seamless multitasking',
-    href: '/os',
-    icon: Monitor,
-    color: 'from-purple-600 to-pink-600',
-    status: 'ready',
-  },
-  {
-    title: 'The Dojo',
-    description: 'Generate game characters, systems, and mechanics with production-ready Unreal & Unity code',
-    href: '/dojo',
-    icon: Gamepad2,
-    color: 'from-red-600 to-orange-600',
-    status: 'ready',
-  },
-  {
-    title: 'Art Studio',
-    description: 'Background remover, sprite animation creator, and AI model download hub',
-    href: '/art-studio',
-    icon: Palette,
-    color: 'from-cyan-600 to-blue-600',
-    status: 'ready',
-  },
-  {
-    title: 'AI Games Arcade',
-    description: 'Play Tic Tac Toe, Checkers, and Chess against AI or watch AI vs AI battles',
-    href: '/os',
-    icon: Brain,
-    color: 'from-amber-600 to-orange-600',
-    status: 'ready',
-  },
-  {
-    title: 'NovaCode Sandbox',
-    description: 'Learn coding with a custom language, complete challenges, and earn rewards',
-    href: '/os',
-    icon: Code2,
-    color: 'from-green-600 to-emerald-600',
-    status: 'ready',
-  },
-  {
-    title: 'Literature Zone',
-    description: 'Music composer, poetry creator, and collaborative writing tools',
-    href: '/literature-zone',
-    icon: PenTool,
-    color: 'from-indigo-600 to-purple-600',
-    status: 'ready',
-  },
-  {
-    title: 'Component Constructor',
-    description: 'Build React, Vue, and Svelte components with Storybook stories and tests',
-    href: '/constructor',
-    icon: Boxes,
-    color: 'from-cyan-600 to-blue-600',
-    status: 'ready',
-  },
-  {
-    title: 'Script Fusion',
-    description: 'Intelligently merge multiple scripts with conflict detection and resolution',
-    href: '/script-fusion',
-    icon: Combine,
-    color: 'from-blue-600 to-indigo-600',
-    status: 'ready',
-  },
-  {
-    title: 'Workspace',
-    description: 'Central hub for all your created assets, projects, and downloaded content',
-    href: '/workspace',
-    icon: FolderKanban,
-    color: 'from-emerald-600 to-teal-600',
-    status: 'ready',
-  },
-];
-
-const COMMUNITY_FEATURES: ToolCard[] = [
-  {
-    title: 'Collaboration Hub',
-    description: 'Find teammates and collaborate on creative projects together',
-    href: '/collaboration',
-    icon: Users,
-    color: 'from-violet-600 to-purple-600',
-    status: 'beta',
-  },
-  {
-    title: 'Social Network',
-    description: 'Connect with creators, share work, join groups, and participate in events',
-    href: '/social',
-    icon: MessageSquare,
-    color: 'from-green-600 to-emerald-600',
-    status: 'ready',
-  },
-  {
-    title: 'Leaderboards',
-    description: 'Compete, earn points, and climb the creator rankings',
-    href: '/leaderboards',
-    icon: Trophy,
-    color: 'from-yellow-600 to-amber-600',
-    status: 'coming-soon',
-  },
-];
-
-const ADVANCED_TOOLS: ToolCard[] = [
-  {
-    title: 'Grand Exchange',
-    description: 'Marketplace for trading digital assets, templates, and creations',
-    href: '/exchange',
-    icon: Store,
-    color: 'from-amber-600 to-orange-600',
-    status: 'coming-soon',
-  },
-  {
-    title: 'Chemistry Lab',
-    description: 'Science tutor for Biology, Chemistry, Physics, and Anatomy',
-    href: '/suites/academics?tab=science',
-    icon: FlaskConical,
-    color: 'from-lime-600 to-green-600',
-    status: 'ready',
-  },
-  {
-    title: 'Aetherium TCG',
-    description: '800-card trading card game with procedural generation',
-    href: '/suites/aetherium',
-    icon: Sparkles,
-    color: 'from-pink-600 to-rose-600',
-    status: 'ready',
-  },
-];
-
-function ToolCardComponent({ tool }: { tool: ToolCard }) {
-  const Icon = tool.icon;
-  const isDisabled = tool.status === 'coming-soon';
-
-  const content = (
-    <Card
-      className={`relative bg-slate-800 border-slate-700 overflow-hidden transition-all duration-300 ${
-        isDisabled
-          ? 'opacity-60 cursor-not-allowed'
-          : 'hover:border-slate-500 hover:scale-[1.02] cursor-pointer'
-      }`}
-    >
-      {/* Gradient top bar */}
-      <div className={`h-1 bg-gradient-to-r ${tool.color}`} />
-
-      <div className="p-6">
-        <div className="flex items-start justify-between mb-4">
-          <div className={`w-12 h-12 rounded-lg bg-gradient-to-br ${tool.color} flex items-center justify-center`}>
-            <Icon size={24} className="text-white" />
-          </div>
-          {tool.status !== 'ready' && (
-            <span
-              className={`text-xs font-semibold px-2 py-1 rounded ${
-                tool.status === 'beta'
-                  ? 'bg-blue-600/30 text-blue-300'
-                  : 'bg-slate-600/30 text-slate-400'
-              }`}
-            >
-              {tool.status === 'beta' ? 'BETA' : 'COMING SOON'}
-            </span>
-          )}
-        </div>
-
-        <h3 className="text-lg font-bold text-white mb-2">{tool.title}</h3>
-        <p className="text-slate-400 text-sm mb-4">{tool.description}</p>
-
-        {!isDisabled && (
-          <div className="flex items-center text-sm font-semibold text-white">
-            Launch <ArrowRight size={16} className="ml-2" />
-          </div>
-        )}
-      </div>
-    </Card>
-  );
-
-  if (isDisabled) {
-    return content;
-  }
-
-  return <Link href={tool.href}>{content}</Link>;
-}
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 w-full max-w-full overflow-x-hidden">
-      {/* Hero Section */}
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-aura-600/20 to-purple-600/20 blur-3xl" />
-        <div className="relative px-4 sm:px-6 lg:px-8 py-16 text-center max-w-7xl mx-auto">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <Rocket size={48} className="text-aura-400" />
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white">AuraNova Studios</h1>
-          </div>
-          <p className="text-xl text-slate-300 max-w-2xl mx-auto mb-8">
-            Your all-in-one creative platform. Generate game code, design sprites,
-            build components, and collaborate with creators worldwide.
-          </p>
-          <div className="flex justify-center gap-4 flex-wrap">
-            <Link
-              href="/os"
-              className="px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold rounded-lg transition flex items-center gap-2 shadow-lg shadow-purple-600/30"
-            >
-              <Monitor size={20} /> Launch OS Mode
-            </Link>
-            <Link
-              href="/dojo"
-              className="px-8 py-3 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white font-bold rounded-lg transition flex items-center gap-2"
-            >
-              <Gamepad2 size={20} /> Enter The Dojo
-            </Link>
-            <Link
-              href="/art-studio"
-              className="px-8 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white font-bold rounded-lg transition flex items-center gap-2"
-            >
-              <Palette size={20} /> Art Studio
-            </Link>
-          </div>
+    <div className="min-h-screen bg-black text-white overflow-x-hidden font-sans">
+      
+      {/* 1. HERO SECTION: THE OVERVIEW */}
+      <section className="relative h-screen flex items-center justify-center overflow-hidden">
+        {/* Parallax Background */}
+        <div className="absolute inset-0 z-0">
+          <Image 
+            src="/hero_overview.png" 
+            alt="Aura Nova City Overview" 
+            fill
+            className="object-cover opacity-80"
+            priority
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black" />
+        </div>
 
-          {/* OS Feature Highlight */}
-          <div className="mt-8 p-4 bg-purple-900/20 rounded-xl border border-purple-500/30 max-w-2xl mx-auto">
-            <p className="text-purple-300 text-sm">
-              <Sparkles size={16} className="inline mr-2" />
-              <strong>NEW:</strong> Try our OS Mode for a complete desktop experience with windowed apps, 
-              AI games, coding sandbox, file manager and more!
+        {/* Content */}
+        <div className="relative z-10 text-center max-w-5xl mx-auto px-4 mt-20">
+          <div className="animate-fade-in-up">
+            <h1 className="text-6xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-400 to-amber-400 mb-6 drop-shadow-[0_0_15px_rgba(0,255,255,0.5)]">
+              AURA NOVA
+            </h1>
+            <p className="text-2xl md:text-3xl text-cyan-100 font-light mb-8 max-w-3xl mx-auto text-shadow">
+              Where Ancient Alchemy Meets Artificial Intelligence.
             </p>
+            
+            <div className="flex flex-wrap justify-center gap-6">
+              <Link 
+                href="/os"
+                className="px-8 py-4 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 rounded-full font-bold text-lg transition transform hover:scale-105 shadow-[0_0_20px_rgba(34,211,238,0.4)] flex items-center border border-cyan-400/30"
+              >
+                <Monitor className="mr-2" /> Enter System
+              </Link>
+              <a 
+                href="https://AuraxNovaOS.online"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-8 py-4 bg-black/60 backdrop-blur-md hover:bg-white/10 rounded-full font-bold text-lg transition border border-white/20 flex items-center"
+              >
+                <Globe className="mr-2 text-purple-400" /> AuraxNovaOS.online
+              </a>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Main Content */}
-      <div className="px-4 sm:px-6 lg:px-8 pb-16 max-w-7xl mx-auto">
-        {/* Creative Tools */}
-        <section className="mb-16">
-          <div className="flex items-center gap-3 mb-6">
-            <Zap size={28} className="text-aura-400" />
-            <h2 className="text-2xl font-bold text-white">Creative Tools</h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {CREATIVE_TOOLS.map((tool) => (
-              <ToolCardComponent key={tool.href} tool={tool} />
-            ))}
-          </div>
-        </section>
+        {/* Scroll Indicator */}
+        <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 animate-bounce">
+          <span className="text-white/50 text-sm tracking-widest uppercase">Explore the City</span>
+        </div>
+      </section>
 
-        {/* Community Features */}
-        <section className="mb-16">
-          <div className="flex items-center gap-3 mb-6">
-            <Users size={28} className="text-green-400" />
-            <h2 className="text-2xl font-bold text-white">Community</h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {COMMUNITY_FEATURES.map((tool) => (
-              <ToolCardComponent key={tool.href} tool={tool} />
-            ))}
-          </div>
-        </section>
+      {/* 2. DOMAIN HUB (PORTAL) */}
+      <section className="relative z-20 -mt-20 px-4 max-w-7xl mx-auto mb-32">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <a href="https://auraxnova.store" target="_blank" className="group">
+            <Card className="bg-black/80 backdrop-blur border-amber-500/30 hover:border-amber-400 transition-all p-6 text-center group-hover:bg-amber-900/20">
+              <ShoppingCart className="w-8 h-8 mx-auto text-amber-400 mb-2 group-hover:scale-110 transition" />
+              <h3 className="text-amber-100 font-bold">.STORE</h3>
+              <p className="text-xs text-amber-400/60">Official Merchandise</p>
+            </Card>
+          </a>
+          <a href="https://auraxnova.website" target="_blank" className="group">
+            <Card className="bg-black/80 backdrop-blur border-purple-500/30 hover:border-purple-400 transition-all p-6 text-center group-hover:bg-purple-900/20">
+              <Sparkles className="w-8 h-8 mx-auto text-purple-400 mb-2 group-hover:scale-110 transition" />
+              <h3 className="text-purple-100 font-bold">.WEBSITE</h3>
+              <p className="text-xs text-purple-400/60">Web Portal</p>
+            </Card>
+          </a>
+          <a href="https://auraxnova.info" target="_blank" className="group">
+            <Card className="bg-black/80 backdrop-blur border-cyan-500/30 hover:border-cyan-400 transition-all p-6 text-center group-hover:bg-cyan-900/20">
+              <Info className="w-8 h-8 mx-auto text-cyan-400 mb-2 group-hover:scale-110 transition" />
+              <h3 className="text-cyan-100 font-bold">.INFO</h3>
+              <p className="text-xs text-cyan-400/60">Documentation</p>
+            </Card>
+          </a>
+          <a href="/os" className="group">
+            <Card className="bg-black/80 backdrop-blur border-green-500/30 hover:border-green-400 transition-all p-6 text-center group-hover:bg-green-900/20">
+              <Cpu className="w-8 h-8 mx-auto text-green-400 mb-2 group-hover:scale-110 transition" />
+              <h3 className="text-green-100 font-bold">OS</h3>
+              <p className="text-xs text-green-400/60">Launch Application</p>
+            </Card>
+          </a>
+        </div>
+      </section>
 
-        {/* Advanced Tools */}
-        <section className="mb-16">
-          <div className="flex items-center gap-3 mb-6">
-            <Sparkles size={28} className="text-pink-400" />
-            <h2 className="text-2xl font-bold text-white">Advanced</h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {ADVANCED_TOOLS.map((tool) => (
-              <ToolCardComponent key={tool.href} tool={tool} />
-            ))}
-          </div>
-        </section>
+      {/* 3. THE CENTER: FUTURISTIC UTOPIA */}
+      <section className="relative min-h-[80vh] flex items-center py-20">
+        <div className="absolute inset-0 z-0">
+           <Image 
+            src="/town_center.png" 
+            alt="Aura Nova Town Center" 
+            fill
+            className="object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-transparent" />
+        </div>
 
-        {/* Quick Stats */}
-        <section className="mb-16">
-          <Card className="bg-gradient-to-r from-slate-800 to-slate-800/50 border-slate-700">
-            <div className="p-8">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-                <div>
-                  <p className="text-3xl font-bold text-white">6</p>
-                  <p className="text-slate-400">Creative Tools</p>
-                </div>
-                <div>
-                  <p className="text-3xl font-bold text-aura-400">5</p>
-                  <p className="text-slate-400">Game Engines</p>
-                </div>
-                <div>
-                  <p className="text-3xl font-bold text-green-400">3</p>
-                  <p className="text-slate-400">UI Frameworks</p>
-                </div>
-                <div>
-                  <p className="text-3xl font-bold text-blue-400">4</p>
-                  <p className="text-slate-400">AI Models</p>
-                </div>
-              </div>
+        <div className="relative z-10 container mx-auto px-6 grid grid-cols-1 md:grid-cols-2">
+          <div className="space-y-8">
+            <div className="inline-block px-4 py-1 rounded-full border border-cyan-500/50 bg-cyan-900/30 text-cyan-300 text-sm font-tracking-wider">
+              SECTOR 1: THE CORE
             </div>
-          </Card>
-        </section>
-
-        {/* Need Help? - Guide Section */}
-        <section className="mb-16">
-          <div className="flex items-center gap-3 mb-6">
-            <Compass size={28} className="text-purple-400" />
-            <h2 className="text-2xl font-bold text-white">Need Help Getting Started?</h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Ask Aura Card */}
-            <Card className="bg-gradient-to-br from-purple-900/50 to-pink-900/50 border-purple-500/30 hover:border-purple-400/50 transition-all cursor-pointer group">
-              <Link href="/guide?tab=ask">
-                <div className="p-6">
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                    <Bot size={28} className="text-white" />
-                  </div>
-                  <h3 className="text-xl font-bold text-white mb-2">Ask Aura</h3>
-                  <p className="text-purple-200/80 text-sm mb-4">
-                    Chat with our AI assistant. Tell Aura what you want to create and get guided to the right tools.
-                  </p>
-                  <div className="flex items-center text-purple-300 text-sm font-semibold group-hover:text-white transition-colors">
-                    Start chatting <ArrowRight size={16} className="ml-2" />
-                  </div>
-                </div>
-              </Link>
-            </Card>
-
-            {/* Explore Features Card */}
-            <Card className="bg-gradient-to-br from-cyan-900/50 to-blue-900/50 border-cyan-500/30 hover:border-cyan-400/50 transition-all cursor-pointer group">
-              <Link href="/guide?tab=features">
-                <div className="p-6">
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                    <Map size={28} className="text-white" />
-                  </div>
-                  <h3 className="text-xl font-bold text-white mb-2">Explore Features</h3>
-                  <p className="text-cyan-200/80 text-sm mb-4">
-                    Browse all creative tools, suites, and features. Find exactly what you need.
-                  </p>
-                  <div className="flex items-center text-cyan-300 text-sm font-semibold group-hover:text-white transition-colors">
-                    View all features <ArrowRight size={16} className="ml-2" />
-                  </div>
-                </div>
-              </Link>
-            </Card>
-
-            {/* Quick Start Card */}
-            <Card className="bg-gradient-to-br from-green-900/50 to-emerald-900/50 border-green-500/30 hover:border-green-400/50 transition-all cursor-pointer group">
-              <Link href="/guide?tab=quickstart">
-                <div className="p-6">
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                    <GraduationCap size={28} className="text-white" />
-                  </div>
-                  <h3 className="text-xl font-bold text-white mb-2">Quick Start</h3>
-                  <p className="text-green-200/80 text-sm mb-4">
-                    5-step guide to get you creating in minutes. Perfect for new users.
-                  </p>
-                  <div className="flex items-center text-green-300 text-sm font-semibold group-hover:text-white transition-colors">
-                    Get started <ArrowRight size={16} className="ml-2" />
-                  </div>
-                </div>
-              </Link>
-            </Card>
-          </div>
-
-          {/* Floating helper tip */}
-          <div className="mt-6 p-4 bg-slate-800/50 rounded-xl border border-slate-700 flex items-center gap-4">
-            <div className="p-2 rounded-full bg-purple-500/20">
-              <HelpCircle size={20} className="text-purple-400" />
-            </div>
-            <p className="text-slate-300 text-sm flex-1">
-              <strong>Pro tip:</strong> Click the floating <span className="text-purple-400">✨ Aura</span> button 
-              in the bottom-right corner anytime you need help. Aura can guide you anywhere!
+            <h2 className="text-5xl font-bold text-white leading-tight">
+              Hyper-Modern <br/>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">
+                Cognitive Architecture
+              </span>
+            </h2>
+            <p className="text-slate-300 text-lg leading-relaxed max-w-xl">
+              In the heart of Aura Nova, advanced AI algorithms govern a seamless digital society. 
+              Here, the <span className="text-cyan-400">Gemini 3.0 Pro</span> neural network processes 
+              reality in real-time, offering creators unlimited potential.
             </p>
+            
+            <div className="grid grid-cols-2 gap-6">
+               <div className="p-4 rounded-xl bg-slate-900/50 border border-slate-700 backdrop-blur">
+                 <Monitor className="text-cyan-400 mb-2" />
+                 <h3 className="text-white font-bold">OS Shell</h3>
+                 <p className="text-slate-400 text-sm">Full desktop environment in browser.</p>
+               </div>
+               <div className="p-4 rounded-xl bg-slate-900/50 border border-slate-700 backdrop-blur">
+                 <Zap className="text-blue-400 mb-2" />
+                 <h3 className="text-white font-bold">Instant Deploy</h3>
+                 <p className="text-slate-400 text-sm">From code to live in seconds.</p>
+               </div>
+            </div>
+
+            <Link href="/os" className="inline-flex items-center text-cyan-400 font-bold hover:text-cyan-300 transition">
+              Explore the Core <ArrowRight className="ml-2 w-5 h-5" />
+            </Link>
           </div>
-        </section>
-      </div>
+        </div>
+      </section>
+
+      {/* 4. THE OUTSKIRTS: DIGITAL ALCHEMY */}
+      <section className="relative min-h-[80vh] flex items-center py-20 justify-end text-right">
+        <div className="absolute inset-0 z-0">
+           <Image 
+            src="/outskirts.png" 
+            alt="Aura Nova Outskirts" 
+            fill
+            className="object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-l from-black via-black/80 to-transparent" />
+        </div>
+
+        <div className="relative z-10 container mx-auto px-6 grid grid-cols-1 md:grid-cols-2">
+          <div className="md:col-start-2 space-y-8 flex flex-col items-end">
+            <div className="inline-block px-4 py-1 rounded-full border border-amber-500/50 bg-amber-900/30 text-amber-300 text-sm font-tracking-wider">
+              SECTOR 9: THE FOUNDRY
+            </div>
+            <h2 className="text-5xl font-bold text-white leading-tight">
+              Forged in <br/>
+              <span className="text-transparent bg-clip-text bg-gradient-to-l from-amber-400 to-orange-500">
+                Steam & Silicon
+              </span>
+            </h2>
+            <p className="text-slate-300 text-lg leading-relaxed max-w-xl">
+              Where the old world meets the new code. The outskirts are home to the builders, 
+              the tinkerers, and the <span className="text-amber-400">Mecha-Constructs</span>. 
+              Use raw tools to forge new games, scripts, and art.
+            </p>
+            
+            <div className="grid grid-cols-2 gap-6 w-full max-w-xl">
+               <div className="p-4 rounded-xl bg-slate-900/50 border border-slate-700 backdrop-blur text-right">
+                 <Cog className="text-amber-400 mb-2 ml-auto" />
+                 <h3 className="text-white font-bold">The Dojo</h3>
+                 <p className="text-slate-400 text-sm">Train your game dev skills.</p>
+               </div>
+               <div className="p-4 rounded-xl bg-slate-900/50 border border-slate-700 backdrop-blur text-right">
+                 <Codesandbox className="text-orange-400 mb-2 ml-auto" />
+                 <h3 className="text-white font-bold">Constructors</h3>
+                 <p className="text-slate-400 text-sm">Build components piece by piece.</p>
+               </div>
+            </div>
+
+            <Link href="/dojo" className="inline-flex items-center text-amber-400 font-bold hover:text-amber-300 transition">
+              Enter the Foundry <ArrowRight className="ml-2 w-5 h-5" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* FOOTER */}
+      <footer className="bg-black py-12 border-t border-slate-800">
+        <div className="container mx-auto px-6 text-center">
+          <h3 className="text-2xl font-black text-white mb-4">AURA NOVA STUDIOS</h3>
+          <p className="text-slate-500 mb-8 max-w-md mx-auto">
+            The Operating System for the Creative Singularity.
+          </p>
+          <div className="flex justify-center gap-6 text-slate-400 text-sm">
+            <Link href="/os" className="hover:text-white transition">System</Link>
+            <Link href="/social" className="hover:text-white transition">Network</Link>
+            <a href="https://auraxnova.store" target="_blank" className="hover:text-white transition">Store</a>
+            <a href="https://console.firebase.google.com/project/auraxnovaos/firestore" target="_blank" className="hover:text-aura-400 transition text-slate-600">Cloud DB</a>
+          </div>
+          <div className="mt-8 text-xs text-slate-600">
+            © 2026 Aura Nova Studios. Powered by Gemini 3.0 Pro.
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

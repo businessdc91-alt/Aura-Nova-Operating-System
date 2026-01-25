@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
+import Image from 'next/image';
 import { WindowManagerProvider } from '@/components/os/WindowManager';
 import { DesktopEnvironment } from '@/components/os/DesktopEnvironment';
 import { FileManager } from '@/components/os/FileManager';
@@ -25,6 +26,7 @@ import {
 } from '@/services/userSettingsService';
 import { MessengerApp } from '@/components/os/MessengerApp';
 import { llmService } from '@/services/llmService';
+import TCGHub from '@/components/games/tcg/TCGHub';
 
 type WallpaperOption = {
   name: string;
@@ -169,6 +171,16 @@ const SettingsApp: React.FC<{
 // Games Hub App
 const GamesHubApp = () => (
   <div className="h-full bg-gradient-to-br from-slate-900 via-purple-900/20 to-slate-900 text-white p-6 overflow-auto">
+    <div className="flex justify-center mb-8">
+      <div className="relative w-64 h-64 md:w-80 md:h-80 hover:scale-105 transition-transform duration-500">
+        <Image 
+          src="/game_studios_logo.jpg" 
+          alt="AuraxNova Game Studios" 
+          fill
+          className="object-contain drop-shadow-[0_0_15px_rgba(168,85,247,0.5)]"
+        />
+      </div>
+    </div>
     <h1 className="text-2xl font-bold mb-2 flex items-center gap-3">
       <Gamepad2 className="w-7 h-7 text-purple-400" />
       AI Games Arcade
@@ -326,6 +338,14 @@ const desktopApps = [
     component: <GamesHubApp />,
     defaultWidth: 700,
     defaultHeight: 500,
+  },
+  {
+    id: 'tcg-master',
+    name: 'Aetherium TCG',
+    icon: <span className="text-xl">🎴</span>,
+    component: <TCGHub />,
+    defaultWidth: 1100,
+    defaultHeight: 800,
   },
   {
     id: 'settings',

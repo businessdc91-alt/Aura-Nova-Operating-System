@@ -88,12 +88,20 @@ export const DraggableWindow: React.FC<DraggableWindowProps> = ({
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
     if (isDragging) {
-      onMove(e.clientX - dragOffset.x, e.clientY - dragOffset.y);
+      // Constrain to viewport bounds
+      const maxX = window.innerWidth - 100; // Keep at least 100px visible
+      const maxY = window.innerHeight - 50; // Keep titlebar visible
+      const newX = Math.max(0, Math.min(maxX, e.clientX - dragOffset.x));
+      const newY = Math.max(0, Math.min(maxY, e.clientY - dragOffset.y));
+      onMove(newX, newY);
     }
     if (isResizing) {
       const newWidth = Math.max(win.minWidth, e.clientX - win.x);
       const newHeight = Math.max(win.minHeight, e.clientY - win.y);
-      onResize(newWidth, newHeight);
+      // Constrain resize to viewport
+      const maxWidth = window.innerWidth - win.x;
+      const maxHeight = window.innerHeight - win.y;
+      onResize(Math.min(newWidth, maxWidth), Math.min(newHeight, maxHeight));
     }
   }, [isDragging, isResizing, dragOffset, win, onMove, onResize]);
 
@@ -185,11 +193,11 @@ export const DraggableWindow: React.FC<DraggableWindowProps> = ({
       </div>
 
       {/* Window Content */}
-      <div className="flex-1 bg-slate-950/80 backdrop-blur-xl overflow-auto">
+      <div className="flex-1 bg-slate-950/80 backdrop-blur-xl overflow-y-auto overflow-x-hidden">
         {win.component}
       </div>
 
-      {/* Resize Handle */}
+      {/* Resize Handle - Larger and more visible */}
       {!win.isMaximized && (
         <div
           onMouseDown={(e) => {
@@ -197,11 +205,17 @@ export const DraggableWindow: React.FC<DraggableWindowProps> = ({
             setIsResizing(true);
             onFocus();
           }}
-          className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize"
+          className="absolute bottom-0 right-0 w-6 h-6 cursor-se-resize group"
           style={{
-            background: 'linear-gradient(135deg, transparent 50%, rgba(139, 92, 246, 0.5) 50%)',
+            background: 'linear-gradient(135deg, transparent 50%, rgba(139, 92, 246, 0.3) 50%)',
           }}
-        />
+        >
+          <div className="absolute bottom-1 right-1 w-3 h-3 opacity-50 group-hover:opacity-100 transition-opacity"
+               style={{
+                 background: 'linear-gradient(135deg, transparent 50%, rgba(139, 92, 246, 0.8) 50%)',
+               }}
+          />
+        </div>
       )}
     </div>
   );

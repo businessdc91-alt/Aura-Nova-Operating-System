@@ -62,7 +62,7 @@ import {
   Coins,
 } from 'lucide-react';
 import { DailyChallengeWidget, WalletDisplay } from '@/components/challenges/DailyChallengeWidget';
-import { getWallet, spendCoins } from '@/services/currencyService';
+import { getWallet, spendCoins, saveWallet } from '@/services/currencyService';
 
 // Import TCG services
 import { 
@@ -73,6 +73,8 @@ import {
   CardInstance,
 } from '@/services/aetheriumService';
 import { PRIME_CATALYST_DECK, getPrimeDeck } from '@/services/primeDeckService';
+// Import Battle Components
+import BattlePlayMat from '@/components/games/tcg/BattlePlayMat';
 import { STARTER_DECK_TEMPLATES, buildStarterDeck, claimStarterDeck } from '@/services/starterDeckService';
 import { EditionCardDisplay, CardDetailView, RARITY_COLORS, PRIME_COLORS } from '@/services/editionCardDisplay';
 
@@ -225,6 +227,38 @@ interface RuleEngineState {
   violations: RuleViolation[];
   oncePerTurn: Set<string>;
   tests: RuleTestResult[];
+}
+
+// ================== ANTE/WAGER SYSTEM ==================
+type AnteType = 'coins' | 'cards' | 'none';
+type CardRarityWager = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
+
+interface DuelAnte {
+  type: AnteType;
+  // For coin wagers
+  coinAmount?: number;
+  // For card wagers
+  playerCardRarity?: CardRarityWager;
+  opponentCardRarity?: CardRarityWager;
+  playerCardCount?: number;
+  opponentCardCount?: number;
+  // Metadata
+  agreedBy: ('player' | 'opponent')[];
+  createdAt: Date;
+}
+
+interface DuelRewards {
+  coins?: number;
+  cards?: AetheriumCard[];
+  xp?: number;
+}
+
+interface OpponentProfile {
+  id: string;
+  name: string;
+  type: 'npc' | 'player';
+  difficulty?: 'easy' | 'medium' | 'hard' | 'legendary';
+  avatar?: string;
 }
 
 interface PackConfig {
@@ -2349,7 +2383,13 @@ function CardDisplay({ card, size = 'medium', onClick, selected, tapped, inHand 
 }
 
 // ================== GAME BOARD COMPONENT ==================
-function GameBoard() {
+interface GameBoardProps {
+  opponent?: OpponentProfile;
+  ante?: DuelAnte;
+  onBattleEnd?: (playerWon: boolean) => void;
+}
+
+function GameBoard({ opponent, ante, onBattleEnd }: GameBoardProps = {}) {
   const selectVolatileRules = (): RuleModifier[] => {
     const now = new Date();
     const week = Math.floor((now.getTime() / 1000 / 60 / 60 / 24 + 3) / 7); // shift to avoid week-0 issues
@@ -2802,6 +2842,21 @@ function GameBoard() {
       }, 800);
     }, 500);
   };
+
+  // Check for win/loss conditions
+  useEffect(() => {
+    if (!onBattleEnd) return; // Only check in real battles, not demo mode
+
+    if (gameState.playerHealth <= 0) {
+      // Player lost
+      toast.error('Defeat! Your health reached 0.');
+      setTimeout(() => onBattleEnd(false), 1500);
+    } else if (gameState.opponentHealth <= 0) {
+      // Player won
+      toast.success('Victory! Opponent health reached 0!');
+      setTimeout(() => onBattleEnd(true), 1500);
+    }
+  }, [gameState.playerHealth, gameState.opponentHealth, onBattleEnd]);
 
   return (
     <div className="space-y-4">
@@ -3476,6 +3531,262 @@ function StarterInventory() {
   );
 }
 
+// ================== NPC REWARD CALCULATION ==================
+function calculateNPCReward(difficulty: OpponentProfile['difficulty']): number {
+  switch (difficulty) {
+    case 'easy':
+      return Math.floor(Math.random() * 2) + 2; // 2-3 coins
+    case 'medium':
+      return Math.floor(Math.random() * 2) + 3; // 3-4 coins
+    case 'hard':
+      return Math.floor(Math.random() * 2) + 4; // 4-5 coins
+    case 'legendary':
+      return 5; // Always 5 coins
+    default:
+      return 2;
+  }
+}
+
+// ================== ANTE MODAL COMPONENT ==================
+interface AnteModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  opponent: OpponentProfile;
+  playerCoins: number;
+  onConfirm: (ante: DuelAnte) => void;
+}
+
+function AnteModal({ isOpen, onClose, opponent, playerCoins, onConfirm }: AnteModalProps) {
+  const [anteType, setAnteType] = useState<AnteType>('none');
+  const [coinAmount, setCoinAmount] = useState(10);
+  const [playerCardRarity, setPlayerCardRarity] = useState<CardRarityWager>('common');
+  const [opponentCardRarity, setOpponentCardRarity] = useState<CardRarityWager>('common');
+
+  const isNPC = opponent.type === 'npc';
+  const npcReward = isNPC ? calculateNPCReward(opponent.difficulty) : 0;
+
+  const handleClose = () => {
+    // Reset modal state
+    setAnteType('none');
+    setCoinAmount(10);
+    setPlayerCardRarity('common');
+    setOpponentCardRarity('common');
+    onClose();
+  };
+
+  const handleConfirm = () => {
+    // Validation for coin wagers
+    if (anteType === 'coins' && !isNPC) {
+      if (coinAmount <= 0) {
+        toast.error('Coin amount must be greater than 0!');
+        return;
+      }
+      if (coinAmount > playerCoins) {
+        toast.error(`Not enough coins! You have ${playerCoins} coins.`);
+        return;
+      }
+    }
+
+    // Validation for card wagers
+    if (anteType === 'cards') {
+      // TODO: Check if player actually has the selected rarity card in collection
+      // For now, just warn the player
+      if (playerCardRarity === 'legendary' || playerCardRarity === 'epic') {
+        toast('High stakes! Make sure you want to risk a rare card.', { icon: '⚠️' });
+      }
+    }
+
+    const ante: DuelAnte = {
+      type: anteType,
+      coinAmount: anteType === 'coins' ? (isNPC ? 0 : coinAmount) : undefined,
+      playerCardRarity: anteType === 'cards' ? playerCardRarity : undefined,
+      opponentCardRarity: anteType === 'cards' ? opponentCardRarity : undefined,
+      playerCardCount: anteType === 'cards' ? 1 : undefined,
+      opponentCardCount: anteType === 'cards' ? 1 : undefined,
+      agreedBy: ['player'],
+      createdAt: new Date(),
+    };
+    onConfirm(ante);
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+      <Card className="bg-slate-900 border-amber-700 max-w-md w-full">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-white text-xl">Set Wager</CardTitle>
+            <button
+              onClick={handleClose}
+              className="text-slate-400 hover:text-white transition"
+            >
+              <X size={24} />
+            </button>
+          </div>
+          <CardDescription className="text-slate-400">
+            Choose your wager against <span className="text-amber-400 font-semibold">{opponent.name}</span>
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Opponent Info */}
+          <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
+            <div className="flex items-center gap-3">
+              {opponent.type === 'npc' ? (
+                <Bot size={40} className="text-amber-400" />
+              ) : (
+                <Users size={40} className="text-blue-400" />
+              )}
+              <div>
+                <p className="text-white font-bold">{opponent.name}</p>
+                <p className="text-slate-400 text-sm">
+                  {opponent.type === 'npc'
+                    ? `${opponent.difficulty?.toUpperCase()} AI`
+                    : 'Player'}
+                </p>
+              </div>
+            </div>
+            {isNPC && (
+              <div className="mt-3 pt-3 border-t border-slate-700">
+                <p className="text-green-400 text-sm flex items-center gap-2">
+                  <Coins size={16} />
+                  Win Reward: {npcReward} Aether Coins
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Wager Type Selection */}
+          <div className="space-y-3">
+            <label className="text-white font-semibold text-sm">Wager Type:</label>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                onClick={() => setAnteType('none')}
+                className={`p-3 rounded-lg border-2 transition ${
+                  anteType === 'none'
+                    ? 'border-green-500 bg-green-900/30'
+                    : 'border-slate-700 bg-slate-800 hover:border-slate-600'
+                }`}
+              >
+                <p className="text-white font-semibold text-sm">None</p>
+                <p className="text-slate-400 text-xs mt-1">Friendly</p>
+              </button>
+              <button
+                onClick={() => setAnteType('coins')}
+                disabled={isNPC}
+                className={`p-3 rounded-lg border-2 transition ${
+                  anteType === 'coins'
+                    ? 'border-amber-500 bg-amber-900/30'
+                    : 'border-slate-700 bg-slate-800 hover:border-slate-600'
+                } ${isNPC ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                <Coins size={20} className="text-amber-400 mx-auto mb-1" />
+                <p className="text-white font-semibold text-sm">Coins</p>
+              </button>
+              <button
+                onClick={() => setAnteType('cards')}
+                className={`p-3 rounded-lg border-2 transition ${
+                  anteType === 'cards'
+                    ? 'border-purple-500 bg-purple-900/30'
+                    : 'border-slate-700 bg-slate-800 hover:border-slate-600'
+                }`}
+              >
+                <Sparkles size={20} className="text-purple-400 mx-auto mb-1" />
+                <p className="text-white font-semibold text-sm">Cards</p>
+              </button>
+            </div>
+          </div>
+
+          {/* Coin Wager (PvP Only) */}
+          {anteType === 'coins' && !isNPC && (
+            <div className="space-y-3 bg-amber-900/20 rounded-lg p-4 border border-amber-700">
+              <label className="text-white font-semibold text-sm">Coin Amount:</label>
+              <Input
+                type="number"
+                min={1}
+                max={playerCoins}
+                value={coinAmount}
+                onChange={(e) => setCoinAmount(Number(e.target.value))}
+                className="bg-slate-800 border-slate-700 text-white"
+              />
+              <p className="text-slate-400 text-xs">
+                Your balance: {playerCoins} coins • Winner takes all ({coinAmount * 2} coins)
+              </p>
+            </div>
+          )}
+
+          {/* Card Rarity Wager */}
+          {anteType === 'cards' && (
+            <div className="space-y-3 bg-purple-900/20 rounded-lg p-4 border border-purple-700">
+              <label className="text-white font-semibold text-sm">Card Rarity:</label>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <p className="text-slate-400 text-xs mb-2">You wager:</p>
+                  <select
+                    value={playerCardRarity}
+                    onChange={(e) => setPlayerCardRarity(e.target.value as CardRarityWager)}
+                    className="w-full bg-slate-800 border border-slate-700 text-white rounded px-3 py-2 text-sm"
+                  >
+                    <option value="common">Common</option>
+                    <option value="uncommon">Uncommon</option>
+                    <option value="rare">Rare</option>
+                    <option value="epic">Epic</option>
+                    <option value="legendary">Legendary</option>
+                  </select>
+                </div>
+                <div>
+                  <p className="text-slate-400 text-xs mb-2">Opponent wagers:</p>
+                  <select
+                    value={opponentCardRarity}
+                    onChange={(e) => setOpponentCardRarity(e.target.value as CardRarityWager)}
+                    className="w-full bg-slate-800 border border-slate-700 text-white rounded px-3 py-2 text-sm"
+                  >
+                    <option value="common">Common</option>
+                    <option value="uncommon">Uncommon</option>
+                    <option value="rare">Rare</option>
+                    <option value="epic">Epic</option>
+                    <option value="legendary">Legendary</option>
+                  </select>
+                </div>
+              </div>
+              <p className="text-slate-400 text-xs mt-2">
+                Winner receives both cards. Both players must agree before battle.
+              </p>
+            </div>
+          )}
+
+          {/* NPC Info */}
+          {isNPC && anteType === 'coins' && (
+            <div className="bg-blue-900/20 rounded-lg p-4 border border-blue-700">
+              <p className="text-blue-300 text-sm flex items-center gap-2">
+                <HelpCircle size={16} />
+                Coin wagers are only available in Player vs Player battles. Win {npcReward} coins by defeating this AI!
+              </p>
+            </div>
+          )}
+
+          {/* Confirm Button */}
+          <div className="flex gap-3">
+            <Button
+              onClick={handleClose}
+              variant="outline"
+              className="flex-1 border-slate-700"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleConfirm}
+              className="flex-1 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700"
+            >
+              {anteType === 'none' ? 'Start Battle' : 'Confirm Wager'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 // ================== MAIN AETHERIUM COMPONENT ==================
 export default function AetheriumSuitePage() {
   const [activeTab, setActiveTab] = useState('play');
@@ -3483,6 +3794,15 @@ export default function AetheriumSuitePage() {
   const [packPity, setPackPity] = useState({ epic: 0, legendary: 0 });
   const [isOpeningPack, setIsOpeningPack] = useState(false);
   const [playerCoins, setPlayerCoins] = useState(0);
+
+  // Ante/Wager System State
+  const [showAnteModal, setShowAnteModal] = useState(false);
+  const [selectedOpponent, setSelectedOpponent] = useState<OpponentProfile | null>(null);
+  const [currentAnte, setCurrentAnte] = useState<DuelAnte | null>(null);
+
+  // Battle State
+  const [inBattle, setInBattle] = useState(false);
+  const [battleResult, setBattleResult] = useState<'win' | 'loss' | null>(null);
 
   // Load player wallet
   useEffect(() => {
@@ -3526,6 +3846,88 @@ export default function AetheriumSuitePage() {
       setIsOpeningPack(false);
     }
   }, [packPity]);
+
+  // Handle ante confirmation and start battle
+  const handleAnteConfirm = (ante: DuelAnte) => {
+    if (!selectedOpponent) return;
+
+    setCurrentAnte(ante);
+    setShowAnteModal(false);
+
+    // Start battle logic
+    const battleMessage = ante.type === 'none'
+      ? 'Battle starting...'
+      : ante.type === 'coins'
+      ? `Battle starting with ${ante.coinAmount} coin wager!`
+      : `Battle starting with card wager!`;
+
+    toast.success(battleMessage);
+
+    // Launch the REAL battle system
+    setInBattle(true);
+    setActiveTab('play'); // Ensure we're on the play tab
+  };
+
+  // Handle battle completion from GameBoard
+  const handleBattleEnd = (playerWon: boolean) => {
+    if (!selectedOpponent || !currentAnte) return;
+
+    setInBattle(false);
+    setBattleResult(playerWon ? 'win' : 'loss');
+
+    if (playerWon) {
+      toast.success(`🎉 Victory! You defeated ${selectedOpponent.name}!`);
+
+      // Award coins for NPC battles
+      if (selectedOpponent.type === 'npc') {
+        const reward = calculateNPCReward(selectedOpponent.difficulty);
+        const wallet = getWallet('demo-user');
+        wallet.aetherCoins += reward;
+        wallet.lifetimeCoins += reward;
+        saveWallet(wallet);
+        setPlayerCoins(wallet.aetherCoins);
+        toast.success(`+${reward} Aether Coins earned!`, { icon: '💰' });
+      }
+
+      // Award coin wager for PvP
+      if (currentAnte.type === 'coins' && currentAnte.coinAmount && selectedOpponent.type === 'player') {
+        const wallet = getWallet('demo-user');
+        wallet.aetherCoins += currentAnte.coinAmount * 2; // Winner takes all
+        wallet.lifetimeCoins += currentAnte.coinAmount * 2;
+        saveWallet(wallet);
+        setPlayerCoins(wallet.aetherCoins);
+        toast.success(`+${currentAnte.coinAmount * 2} Aether Coins from wager!`, { icon: '💰' });
+      }
+
+      // Award card wager
+      if (currentAnte.type === 'cards') {
+        toast.success(`You won a ${currentAnte.opponentCardRarity} card!`, { icon: '🎴' });
+        // TODO: Add won card to player's collection
+      }
+    } else {
+      toast.error(`Defeat! ${selectedOpponent.name} won the battle.`);
+
+      // Lose coin wager for PvP
+      if (currentAnte.type === 'coins' && currentAnte.coinAmount && selectedOpponent.type === 'player') {
+        const spendResult = spendCoins('demo-user', currentAnte.coinAmount, 'aetherium', 'Wager loss');
+        if (spendResult.success) {
+          setPlayerCoins(spendResult.newBalance);
+          toast.error(`-${currentAnte.coinAmount} Aether Coins lost.`, { icon: '💸' });
+        }
+      }
+
+      // Lose card wager
+      if (currentAnte.type === 'cards') {
+        toast.error(`You lost your ${currentAnte.playerCardRarity} card.`, { icon: '🎴' });
+        // TODO: Remove lost card from player's collection
+      }
+    }
+
+    // Reset battle state
+    setCurrentAnte(null);
+    setSelectedOpponent(null);
+    setTimeout(() => setBattleResult(null), 3000);
+  };
 
   return (
     <div className="min-h-screen bg-slate-950 py-8 px-4">
@@ -3591,7 +3993,20 @@ export default function AetheriumSuitePage() {
                     <Bot size={48} className="mx-auto text-amber-400 mb-4" />
                     <h3 className="text-white font-bold text-lg">vs AI</h3>
                     <p className="text-slate-400 text-sm">Practice against AI opponents</p>
-                    <Button className="mt-4 bg-amber-600">Start Battle</Button>
+                    <Button
+                      className="mt-4 bg-amber-600"
+                      onClick={() => {
+                        setSelectedOpponent({
+                          id: 'npc-training',
+                          name: 'Training Bot',
+                          type: 'npc',
+                          difficulty: 'easy',
+                        });
+                        setShowAnteModal(true);
+                      }}
+                    >
+                      Start Battle
+                    </Button>
                   </CardContent>
                 </Card>
                 <Card className="bg-gradient-to-br from-blue-900/50 to-slate-900 border-blue-700 cursor-pointer hover:border-blue-500 transition">
@@ -3599,7 +4014,19 @@ export default function AetheriumSuitePage() {
                     <Users size={48} className="mx-auto text-blue-400 mb-4" />
                     <h3 className="text-white font-bold text-lg">Quick Match</h3>
                     <p className="text-slate-400 text-sm">Find an online opponent</p>
-                    <Button className="mt-4 bg-blue-600">Find Match</Button>
+                    <Button
+                      className="mt-4 bg-blue-600"
+                      onClick={() => {
+                        setSelectedOpponent({
+                          id: 'player-random',
+                          name: 'Random Player',
+                          type: 'player',
+                        });
+                        setShowAnteModal(true);
+                      }}
+                    >
+                      Find Match
+                    </Button>
                   </CardContent>
                 </Card>
                 <Card className="bg-gradient-to-br from-purple-900/50 to-slate-900 border-purple-700 cursor-pointer hover:border-purple-500 transition">
@@ -3607,7 +4034,19 @@ export default function AetheriumSuitePage() {
                     <Trophy size={48} className="mx-auto text-purple-400 mb-4" />
                     <h3 className="text-white font-bold text-lg">Ranked</h3>
                     <p className="text-slate-400 text-sm">Competitive ladder matches</p>
-                    <Button className="mt-4 bg-purple-600">Enter Ranked</Button>
+                    <Button
+                      className="mt-4 bg-purple-600"
+                      onClick={() => {
+                        setSelectedOpponent({
+                          id: 'player-ranked',
+                          name: 'Ranked Opponent',
+                          type: 'player',
+                        });
+                        setShowAnteModal(true);
+                      }}
+                    >
+                      Enter Ranked
+                    </Button>
                   </CardContent>
                 </Card>
               </div>
@@ -3644,7 +4083,33 @@ export default function AetheriumSuitePage() {
                 </CardContent>
               </Card>
 
-              <GameBoard />
+              {/* Show GameBoard only when in battle */}
+              {inBattle && selectedOpponent && currentAnte && (
+                <Card className="bg-slate-900 border-amber-700 border-2">
+                  <CardHeader>
+                    <CardTitle className="text-white text-center">
+                      Battle vs {selectedOpponent.name}
+                      {currentAnte.type !== 'none' && (
+                        <span className="ml-3 text-amber-400 text-sm">
+                          {currentAnte.type === 'coins'
+                            ? `💰 ${currentAnte.coinAmount} coins at stake!`
+                            : `🎴 Card wager!`}
+                        </span>
+                      )}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <GameBoard
+                      opponent={selectedOpponent}
+                      ante={currentAnte}
+                      onBattleEnd={handleBattleEnd}
+                    />
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Show demo GameBoard when not in battle */}
+              {!inBattle && <GameBoard />}
             </div>
           </TabsContent>
 
@@ -3883,12 +4348,34 @@ export default function AetheriumSuitePage() {
         {/* Lore Footer */}
         <div className="mt-12 text-center border-t border-slate-800 pt-8">
           <p className="text-slate-500 text-sm italic max-w-2xl mx-auto">
-            "In the age of the Aether Wars, two forces emerged from the mists of progress: 
-            The Cogborn, masters of steam and brass, and the Nanoswarm, architects of digital consciousness. 
+            "In the age of the Aether Wars, two forces emerged from the mists of progress:
+            The Cogborn, masters of steam and brass, and the Nanoswarm, architects of digital consciousness.
             Now, their battle for supremacy continues in the arenas of the Cogwork Realm..."
           </p>
         </div>
       </div>
+
+      {/* Battle Mode Overlay */}
+      {inBattle && selectedOpponent && (
+        <div className="fixed inset-0 z-[100] bg-slate-950">
+          <BattlePlayMat 
+            playerDeckIds={['cog-001', 'cog-002', 'cog-003', 'spell-001', 'gear-001', 'cog-001', 'cog-003', 'cog-002', 'trap-001', 'ench-001']}
+            opponentDeckIds={['nano-001', 'nano-002', 'nano-003', 'spell-002', 'trap-002', 'nano-001', 'nano-003', 'nano-002', 'spell-003', 'ench-002']}
+            onComplete={(winner) => handleBattleEnd(winner === 'player')}
+          />
+        </div>
+      )}
+
+      {/* Ante Modal */}
+      {selectedOpponent && (
+        <AnteModal
+          isOpen={showAnteModal}
+          onClose={() => setShowAnteModal(false)}
+          opponent={selectedOpponent}
+          playerCoins={playerCoins}
+          onConfirm={handleAnteConfirm}
+        />
+      )}
     </div>
   );
 }

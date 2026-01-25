@@ -2,7 +2,11 @@
  * Game Scaffold Service
  * Generates complete game project structures for multiple engines
  * Handles story, mechanics, assets, and deployment instructions
+ * 
+ * REAL AI INTEGRATION - Uses unified aiService for generation
  */
+
+import { aiService } from '@/services/aiService';
 
 export type GameComplexity = 'puzzle' | 'arcade' | 'adventure' | 'rpg' | 'zelda-like' | 'epic';
 export type GameEngine = 'web' | 'unity' | 'godot' | 'unreal';
@@ -166,12 +170,48 @@ class GameScaffoldService {
   }
 
   /**
-   * Generate story from user prompt
+   * Generate story from user prompt using REAL AI
    */
   private async generateStory(request: GameGenerationRequest): Promise<GameStory> {
-    // In production, this would call LM Studio or Claude/Gemini
-    // For now, template-based generation
+    const prompt = `You are a game narrative designer. Create a compelling game story.
 
+Game Title: ${request.title}
+User Vision: ${request.prompt}
+Complexity: ${request.complexity}
+Style: ${request.graphicsStyle}
+${request.inspirations?.length ? `Inspirations: ${request.inspirations.join(', ')}` : ''}
+
+Generate a complete story with this EXACT JSON format (no markdown, just JSON):
+{
+  "title": "${request.title}",
+  "premise": "One-paragraph premise",
+  "setting": "World description",
+  "themes": ["theme1", "theme2", "theme3"],
+  "act1": "Act 1 setup - introduce world and protagonist",
+  "act2": "Act 2 conflict - main challenges and rising action",
+  "act3": "Act 3 resolution - climax and conclusion",
+  "endingVariations": ["Ending 1", "Ending 2", "Ending 3"]
+}`;
+
+    try {
+      const response = await aiService.generate(prompt, {
+        temperature: 0.8,
+        maxTokens: 2048,
+      });
+
+      if (response.success) {
+        // Try to parse AI response as JSON
+        const jsonMatch = response.content.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          return parsed as GameStory;
+        }
+      }
+    } catch (e) {
+      console.error('AI story generation failed, using template fallback:', e);
+    }
+
+    // Fallback to template-based generation
     const templates: Record<GameComplexity, Partial<GameStory>> = {
       puzzle: {
         premise: 'Solve environmental puzzles to progress',
@@ -311,7 +351,7 @@ class GameScaffoldService {
   }
 
   /**
-   * Generate characters based on story
+   * Generate characters based on story using REAL AI
    */
   private async generateCharacters(
     story: GameStory,
@@ -326,6 +366,45 @@ class GameScaffoldService {
       epic: 10,
     }[complexity] || 3;
 
+    const prompt = `You are a game character designer. Create ${characterCount} unique characters for this game:
+
+Game: ${story.title}
+Premise: ${story.premise}
+Setting: ${story.setting}
+Themes: ${story.themes.join(', ')}
+
+Generate characters with this EXACT JSON format (no markdown, just JSON array):
+[
+  {
+    "name": "Character Name",
+    "role": "protagonist" or "ally" or "antagonist" or "npc",
+    "appearance": "Physical description",
+    "personality": ["trait1", "trait2"],
+    "abilities": ["ability1", "ability2"],
+    "dialogue": ["Example line 1", "Example line 2"]
+  }
+]
+
+Include at least 1 protagonist. For complex games, include allies and antagonists.`;
+
+    try {
+      const response = await aiService.generate(prompt, {
+        temperature: 0.8,
+        maxTokens: 3000,
+      });
+
+      if (response.success) {
+        const jsonMatch = response.content.match(/\[[\s\S]*\]/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          return parsed as GameCharacter[];
+        }
+      }
+    } catch (e) {
+      console.error('AI character generation failed, using template fallback:', e);
+    }
+
+    // Fallback to template characters
     const characters: GameCharacter[] = [
       {
         name: 'Player Character',
@@ -509,7 +588,7 @@ class GameScaffoldService {
   }
 
   /**
-   * Generate main game code skeleton
+   * Generate main game code skeleton using REAL AI
    */
   private async generateGameCode(
     request: GameGenerationRequest,
@@ -518,7 +597,81 @@ class GameScaffoldService {
     characters: GameCharacter[],
     levels: GameLevel[]
   ): Promise<string> {
-    // Code template varies by engine
+    const engineLang = {
+      web: 'JavaScript with Phaser 3 or vanilla Canvas',
+      unity: 'C# for Unity',
+      godot: 'GDScript for Godot 4',
+      unreal: 'C++ with Unreal Engine macros',
+    }[request.engine];
+
+    const mechanicsDesc = mechanics.map(m => `- ${m.name}: ${m.description}`).join('\n');
+    const characterDesc = characters.map(c => `- ${c.name} (${c.role}): ${c.abilities.join(', ')}`).join('\n');
+
+    const prompt = `You are an expert game developer. Generate complete, production-ready ${engineLang} game code.
+
+GAME: ${story.title}
+STORY: ${story.premise}
+SETTING: ${story.setting}
+ENGINE: ${request.engine.toUpperCase()}
+COMPLEXITY: ${request.complexity}
+LEVELS: ${levels.length}
+
+MECHANICS TO IMPLEMENT:
+${mechanicsDesc}
+
+CHARACTERS:
+${characterDesc}
+
+REQUIREMENTS:
+1. Complete, runnable code (not pseudocode)
+2. Proper game loop with update/render
+3. Player movement and input handling
+4. Basic collision detection
+5. Level/scene management
+6. Score/health tracking
+7. Clean code with comments
+8. Ready to build and run
+
+${request.engine === 'web' ? `Use Phaser 3 structure with:
+- preload() for assets
+- create() for initialization  
+- update() for game loop
+- Include full game config` : ''}
+
+${request.engine === 'unity' ? `Include:
+- GameManager.cs (singleton pattern)
+- PlayerController.cs (movement, input)
+- Basic setup instructions in comments` : ''}
+
+${request.engine === 'godot' ? `Include:
+- Main.gd (game manager)
+- Player.gd (movement, input)
+- Use Godot 4 syntax` : ''}
+
+${request.engine === 'unreal' ? `Include:
+- GameMode class with .h and .cpp sections
+- Player pawn basics
+- Use proper UCLASS, UPROPERTY macros` : ''}
+
+Generate the complete main game file now:`;
+
+    try {
+      const response = await aiService.generate(prompt, {
+        temperature: 0.7,
+        maxTokens: 8192,
+      });
+
+      if (response.success && response.content.length > 100) {
+        // Clean up markdown code blocks if present
+        let code = response.content;
+        code = code.replace(/```[\w]*\n?/g, '').replace(/```$/g, '').trim();
+        return code;
+      }
+    } catch (e) {
+      console.error('AI code generation failed, using template fallback:', e);
+    }
+
+    // Fallback to templates if AI fails
     const templates: Record<GameEngine, string> = {
       web: `
 // ${story.title}

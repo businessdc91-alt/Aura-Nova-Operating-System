@@ -8,6 +8,8 @@ import {
 } from 'lucide-react';
 import { useWindowManager } from './WindowManager';
 import { NotificationCenter, NotificationBell } from './NotificationCenter';
+import { OnlineUsersBar } from '@/components/social/OnlineUsersBar';
+import { FloatingMessageButton } from '@/components/social/Messenger';
 
 // ============================================================================
 // DESKTOP ENVIRONMENT - THE VISUAL OS SHELL
@@ -97,7 +99,7 @@ export const DesktopEnvironment: React.FC<DesktopEnvironmentProps> = ({
         {apps.slice(0, 8).map((app) => (
           <button
             key={app.id}
-            onDoubleClick={() => handleOpenApp(app)}
+            onClick={() => handleOpenApp(app)}
             className="flex flex-col items-center gap-1 p-3 rounded-lg hover:bg-white/10 transition-colors group w-20"
           >
             <div className="text-3xl group-hover:scale-110 transition-transform flex items-center justify-center">
@@ -247,6 +249,16 @@ export const DesktopEnvironment: React.FC<DesktopEnvironmentProps> = ({
         isOpen={showNotifications}
         onClose={() => setShowNotifications(false)}
       />
+
+      {/* Online Users Bar - Top Right */}
+      <div className="absolute top-2 right-2 z-[9990]">
+        <OnlineUsersBar />
+      </div>
+
+      {/* Floating Message Button - Bottom Right */}
+      <div className="absolute bottom-20 right-4 z-[9990]">
+        <FloatingMessageButton />
+      </div>
     </div>
   );
 };
