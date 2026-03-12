@@ -105,6 +105,7 @@ export function CatalystDojo() {
   const [totalTokens, setTotalTokens] = useState(0);
   const [copied, setCopied] = useState<string | null>(null);
   const [ragPluginActive, setRagPluginActive] = useState(false);
+  const [proactivePrompts, setProactivePrompts] = useState<{ id: string; message: string; actionText: string; action: () => void }[]>([]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -177,6 +178,24 @@ export function CatalystDojo() {
 
   const removeParticipant = (id: string) => {
     setParticipants(participants.filter((p) => p.id !== id));
+  };
+
+  // ================== PROACTIVE INTELLIGENCE ==================
+
+  const checkForAutoPrompts = (latestCode: string) => {
+    // Simulate AI analyzing code for missing layers
+    if (latestCode.includes('class') && !latestCode.includes('interface')) {
+      const newPrompt = {
+        id: `prompt-${Date.now()}`,
+        message: "I've detected a class without an interface. Should I generate the logical abstraction layer?",
+        actionText: "Generate Interface",
+        action: () => {
+          toast.success("Generating interface...");
+          // Logic to append interface code would go here
+        }
+      };
+      setProactivePrompts([newPrompt]);
+    }
   };
 
   // ================== AI RESPONSE GENERATION ==================
@@ -538,11 +557,10 @@ ${participant.ragEnabled ? '\n⚡ RAG ENABLED: You have access to enhanced conte
                 </div>
                 <button
                   onClick={() => setRagPluginActive(!ragPluginActive)}
-                  className={`px-4 py-1 rounded font-bold transition-all ${
-                    ragPluginActive
-                      ? 'bg-yellow-500 text-black'
-                      : 'bg-slate-700 text-slate-300'
-                  }`}
+                  className={`px-4 py-1 rounded font-bold transition-all ${ragPluginActive
+                    ? 'bg-yellow-500 text-black'
+                    : 'bg-slate-700 text-slate-300'
+                    }`}
                 >
                   {ragPluginActive ? 'Active' : 'Inactive'}
                 </button>
@@ -899,6 +917,46 @@ ${participant.ragEnabled ? '\n⚡ RAG ENABLED: You have access to enhanced conte
           </CardContent>
         </Card>
       </div>
+      {/* Proactive Intelligence Overlays */}
+      {proactivePrompts.length > 0 && (
+        <div className="fixed bottom-24 right-8 z-50">
+          {proactivePrompts.map((prompt) => (
+            <Card key={prompt.id} className="w-80 border-cyan-500/50 bg-slate-950/90 shadow-lg shadow-cyan-500/20 mb-4">
+              <CardContent className="p-4">
+                <div className="flex items-start gap-3">
+                  <div className="rounded-full bg-cyan-500/10 p-2 text-cyan-500">
+                    <Zap className="h-4 w-4" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-slate-200 font-semibold mb-1">Aura Architecture Insight</p>
+                    <p className="text-xs text-slate-400 mb-3">{prompt.message}</p>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        className="h-8 bg-cyan-600 text-[10px] hover:bg-cyan-500"
+                        onClick={() => {
+                          prompt.action();
+                          setProactivePrompts([]);
+                        }}
+                      >
+                        {prompt.actionText}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 text-[10px] text-slate-500"
+                        onClick={() => setProactivePrompts([])}
+                      >
+                        Dismiss
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

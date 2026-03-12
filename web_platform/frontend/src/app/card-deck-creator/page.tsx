@@ -14,6 +14,7 @@ import {
   Moon, Sun, Leaf, Skull, Ghost, Cat, Dog, Bird, Fish, Bug,
 } from 'lucide-react';
 import { DailyChallengeWidget, WalletDisplay } from '@/components/challenges/DailyChallengeWidget';
+import { LivingCard } from '@/components/cards/LivingCard';
 
 // ============================================================================
 // CUSTOM CARD DECK CREATOR - Design unique playing cards
@@ -185,49 +186,74 @@ export default function CardDeckCreatorPage() {
   const [backPattern, setBackPattern] = useState('ornate');
   const [customBackColor, setCustomBackColor] = useState('#8e44ad');
   const [showBack, setShowBack] = useState(false);
+  const [liveMode, setLiveMode] = useState(false);
 
   // Generate full deck
-  const generateDeck = useCallback((): PlayingCard[] => {
-    const cards: PlayingCard[] = [];
+    // Generate Aetherium Deck based on Rarity
+    const generateDeck = useCallback(async () => {
+        try {
+            const response = await fetch('http://localhost:4000/api/cards');
+            const aetheriumCards: any[] = await response.json();
+            
+            if (!aetheriumCards || aetheriumCards.length === 0) return [];
+
+            const newDeck: PlayingCard[] = [];
+            
+            // Rarity Weights: How many copies of each rarity to include?
+            // Common: 4 copies, Uncommon: 3, Rare: 2, Ultra-Rare: 1
+            const copiesMap: Record<string, number> = {
+                'Common': 4,
+                'Uncommon': 3,
+                'Rare': 2,
+                'Ultra-Rare': 1
+            };
+
+            aetheriumCards.forEach(cardData => {
+                const copies = copiesMap[cardData.rarity] || 2;
+                for (let i = 0; i < copies; i++) {
+                    // Map to existing PlayingCard structure for compatibility
+                    // We'll use "Suit" for Family and "Rank" for Rarity symbol
+                    let suitName = cardData.family || 'Unknown';
+                    let suitSymbol = '💠'; 
+                    let color = '#ecf0f1';
+                    
+                    if (cardData.rarity === 'Common') { color = '#bdc3c7'; suitSymbol = '⚪'; }
+                    if (cardData.rarity === 'Rare') { color = '#f1c40f'; suitSymbol = '⭐'; }
+                    if (cardData.rarity === 'Ultra-Rare') { color = '#9b59b6'; suitSymbol = '👑'; }
+
+                    newDeck.push({
+                        id: `${cardData.id}-${i}`,
+                        suit: suitName,
+                        rank: cardData.rarity.substring(0, 1), // C, U, R
+                        customName: cardData.name,
+                        frontDesign: {
+                            backgroundColor: '#1a1a1a', // Dark theme by default
+                            suitColor: color,
+                            borderColor: color,
+                            pattern: 'none',
+                            artwork: '' // TODO: dynamic assets
+                        },
+                        // Store full data for Living Dialogues
+                        ...cardData 
+                    });
+                }
+            });
+
+            // Shuffle
+            return newDeck.sort(() => Math.random() - 0.5);
+
+        } catch (error) {
+            console.error('Failed to load Aetherium cards:', error);
+            return [];
+        }
+    }, []);
+
+    // We need to use useEffect to load the deck now since it's async
+    const [deck, setDeck] = useState<PlayingCard[]>([]);
     
-    selectedTheme.suits.forEach((suit, suitIdx) => {
-      RANKS.forEach((rank, rankIdx) => {
-        cards.push({
-          id: `${suit.id}-${rank}`,
-          suit: suit.id,
-          rank,
-          frontDesign: {
-            backgroundColor: '#ffffff',
-            suitColor: suit.color,
-            borderColor: '#333333',
-            pattern: 'none',
-          },
-        });
-      });
-    });
-
-    // Add jokers
-    if (includeJokers) {
-      for (let i = 0; i < jokerCount; i++) {
-        cards.push({
-          id: `joker-${i + 1}`,
-          suit: 'joker',
-          rank: 'JOKER',
-          isJoker: true,
-          frontDesign: {
-            backgroundColor: '#1a1a1a',
-            suitColor: i === 0 ? '#e74c3c' : '#2c3e50',
-            borderColor: '#f1c40f',
-            pattern: 'none',
-          },
-        });
-      }
-    }
-
-    return cards;
-  }, [selectedTheme, includeJokers, jokerCount]);
-
-  const deck = generateDeck();
+    React.useEffect(() => {
+        generateDeck().then(d => setDeck(d));
+    }, [generateDeck]);
 
   const shuffleDeck = useCallback(() => {
     toast.success('Deck shuffled! 🎲');
@@ -382,6 +408,21 @@ export default function CardDeckCreatorPage() {
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold">{deckName}</h3>
               <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 mr-4 bg-slate-900/50 p-1 rounded-lg border border-slate-800">
+                    <span className={`text-xs font-medium transition-colors ${liveMode ? 'text-purple-400' : 'text-slate-500'}`}>
+                        {liveMode ? 'Living Mode' : 'Edit Mode'}
+                    </span>
+                    <Button
+                        size="sm"
+                        variant={liveMode ? 'default' : 'ghost'}
+                        className={`h-7 px-2 ${liveMode ? 'bg-purple-600 hover:bg-purple-700' : 'text-slate-400 hover:text-white'}`}
+                        onClick={() => setLiveMode(!liveMode)}
+                        title={liveMode ? "Disable Living Mode" : "Enable Living Mode to chat with cards"}
+                    >
+                        <Sparkles className={`w-3.5 h-3.5 ${liveMode ? 'animate-pulse text-white' : ''}`} />
+                    </Button>
+                </div>
+
                 <Button
                   size="sm"
                   variant={!showBack ? 'default' : 'outline'}
@@ -401,56 +442,65 @@ export default function CardDeckCreatorPage() {
 
             {/* Cards Display */}
             {!showBack ? (
-              <div className="space-y-6">
-                {selectedTheme.suits.map((suit, suitIdx) => (
-                  <div key={suit.id}>
-                    <div className="flex items-center gap-2 mb-2">
-                      <span style={{ color: suit.color }} className="text-xl">{suit.symbol}</span>
-                      <span className="text-sm font-medium">{suit.name}</span>
-                    </div>
-                    <div className="grid grid-cols-7 gap-2">
-                      {RANKS.map((rank, rankIdx) => (
-                        <button
-                          key={`${suit.id}-${rank}`}
-                          onClick={() => setSelectedCard({ suit: suitIdx, rank: rankIdx })}
-                          className={`aspect-[2.5/3.5] rounded-lg bg-white border-2 flex flex-col items-center justify-center transition hover:scale-105 ${
-                            selectedCard?.suit === suitIdx && selectedCard?.rank === rankIdx
-                              ? 'border-purple-500 ring-2 ring-purple-500/50'
-                              : 'border-slate-300'
-                          }`}
-                        >
-                          <span className="text-xs font-bold" style={{ color: suit.color }}>
-                            {rank}
-                          </span>
-                          <span style={{ color: suit.color }} className="text-lg">
-                            {suit.symbol}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ))}
+                {/* Dynamic Aetherium Deck Display */}
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                  {deck.map((card) => (
+                    <div key={card.id} className="aspect-[2.5/3.5]">
+                        {liveMode ? (
+                            <LivingCard
+                                id={card.id}
+                                suit={card.suit}
+                                rank={card.rank}
+                                color={card.frontDesign.suitColor}
+                                symbol={card.frontDesign.suitColor === '#f1c40f' ? '⭐' : '💠'}
+                                backgroundColor={card.frontDesign.backgroundColor}
+                                personality={(card as any).lore} // Pass Lore as personality
+                            >
+                                <div 
+                                    className="w-full h-full rounded-lg flex flex-col items-center justify-between p-2 text-center border-2"
+                                    style={{ 
+                                        backgroundColor: card.frontDesign.backgroundColor, 
+                                        borderColor: card.frontDesign.borderColor 
+                                    }}
+                                >
+                                     {/* Header */}
+                                     <div className="w-full flex justify-between items-center text-[10px] font-bold opacity-70" style={{ color: card.frontDesign.suitColor }}>
+                                        <span>{card.rank}</span>
+                                        <span>{(card as any).stats?.split('/')[0] || ''}</span>
+                                     </div>
 
-                {/* Jokers */}
-                {includeJokers && (
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-xl">🃏</span>
-                      <span className="text-sm font-medium">Jokers</span>
+                                     {/* Center Art / Name */}
+                                     <div className="flex-1 flex flex-col items-center justify-center">
+                                        <span className="text-2xl mb-1">{card.frontDesign.suitColor === '#f1c40f' ? '⭐' : '💠'}</span>
+                                        <span className="text-xs font-bold leading-tight line-clamp-3" style={{ color: 'white' }}>
+                                            {card.customName}
+                                        </span>
+                                     </div>
+                                     
+                                     {/* Footer / Lore Snippet */}
+                                     <div className="mt-1 pb-1 w-full border-t border-white/10 pt-1">
+                                         <p className="text-[9px] text-slate-400 line-clamp-2 leading-none">
+                                             {(card as any).glitchEffect || (card as any).lore}
+                                         </p>
+                                     </div>
+                                </div>
+                            </LivingCard>
+                        ) : (
+                            <button
+                              className="w-full h-full rounded-lg border-2 flex flex-col items-center justify-center transition hover:scale-105"
+                              style={{ 
+                                  backgroundColor: card.frontDesign.backgroundColor, 
+                                  borderColor: card.frontDesign.borderColor 
+                              }}
+                            >
+                              <span className="text-xs font-bold text-white px-2 text-center">
+                                {card.customName}
+                              </span>
+                            </button>
+                        )}
                     </div>
-                    <div className="flex gap-2">
-                      {Array.from({ length: jokerCount }).map((_, idx) => (
-                        <div
-                          key={`joker-${idx}`}
-                          className="aspect-[2.5/3.5] w-16 rounded-lg bg-gradient-to-br from-red-500 to-purple-600 border-2 border-yellow-400 flex items-center justify-center"
-                        >
-                          <span className="text-2xl">🃏</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
+                  ))}
+                </div>
             ) : (
               // Card Backs
               <div className="grid grid-cols-4 gap-4">

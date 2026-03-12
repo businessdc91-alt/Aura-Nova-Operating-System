@@ -1,0 +1,93 @@
+# Firestore Security Rules for Aura Nova Social Features
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ============== USERS ==============
+    // Users collection stores public profiles and settings
+    match /users/{userId} {
+      // Anyone can read a user's public profile
+      allow read: if true;
+      // Only the authenticated user can write to their own document
+      allow write: if request.auth.uid == userId;
+    }
+
+    // ============== POSTS ==============
+    // Stores all user-generated posts
+    match /posts/{postId} {
+      // Anyone can read public posts
+      allow read: if resource.data.visibility == 'public';
+      // Logged-in users can read follower-only posts if they follow the author
+      allow read: if resource.data.visibility == 'followers' 
+                  && exists(/databases/$(database)/documents/users/$(request.auth.uid)/following/$(resource.data.authorId));
+      // Users can read their own private posts
+      allow read: if resource.data.visibility == 'private' && request.auth.uid == resource.data.authorId;
+      
+      // Logged-in users can create posts
+      allow create: if request.auth.uid != null;
+      // Only the author can update or delete their post
+      allow update, delete: if request.auth.uid == resource.data.authorId;
+    }
+
+    // ============== COMMENTS ==============
+    // Sub-collection under each post
+    match /posts/{postId}/comments/{commentId} {
+      // Anyone can read comments on a public post
+      allow read: if get(/databases/$(database)/documents/posts/$(postId)).data.visibility == 'public';
+      // Logged-in users can create comments
+      allow create: if request.auth.uid != null;
+      // Only the author can update or delete their comment
+      allow update, delete: if request.auth.uid == resource.data.authorId;
+    }
+    
+    // ============== LIKES ==============
+    // Sub-collection to track likes on posts
+    match /posts/{postId}/likes/{userId} {
+        // Anyone can see who liked a post
+        allow read: if true;
+        // A user can only like/unlike for themselves
+        allow write: if request.auth.uid == userId;
+    }
+
+    // ============== FOLLOWS ==============
+    // `following` sub-collection for each user
+    match /users/{userId}/following/{targetId} {
+        // Anyone can see who a user is following
+        allow read: if true;
+        // A user can only modify their own following list
+        allow write: if request.auth.uid == userId;
+    }
+    
+    // `followers` sub-collection for each user
+    match /users/{userId}/followers/{followerId} {
+        // Anyone can see who follows a user
+        allow read: if true;
+        // This is managed by a cloud function for integrity
+        allow write: if false; 
+    }
+
+    // ============== CONVERSATIONS (CHAT) ==============
+    // Stores metadata about a chat conversation
+    match /conversations/{conversationId} {
+      // Only members of the conversation can read its metadata
+      allow read: if request.auth.uid in resource.data.members;
+      // Allow creation if the user is one of the members
+      allow create: if request.auth.uid in request.resource.data.members;
+    }
+
+    // Messages within a conversation
+    match /conversations/{conversationId}/messages/{messageId} {
+      // Only members of the conversation can read messages
+      allow read, write: if request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.members;
+    }
+
+    // ============== NOTIFICATIONS ==============
+    // User-specific notifications
+    match /users/{userId}/notifications/{notificationId} {
+      // Users can only read or write to their own notifications
+      allow read, write: if request.auth.uid == userId;
+    }
+  }
+}

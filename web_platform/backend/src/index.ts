@@ -22,6 +22,10 @@ import pointsRoutes from './routes/points';
 import chatRoutes from './routes/chat';
 import notificationRoutes from './routes/notifications';
 import paymentsRoutes from './routes/payments';
+import aiRoutes from './routes/ai';
+import generatorRoutes from './routes/generator';
+import cardLibraryRoutes from './routes/cardLibrary';
+import assetsRoutes from './routes/assets';
 
 import { initWebSocket } from './websocket/server';
 
@@ -69,6 +73,13 @@ app.use('/api/points', pointsRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/payments', paymentsRoutes);
+app.use('/api/ai', aiRoutes);
+app.use('/api/ai', generatorRoutes);
+app.use('/api/cards', cardLibraryRoutes);
+app.use('/api/assets', assetsRoutes);
+
+// Serve Static Assets directly
+app.use('/assets', express.static('D:\\Aetherium_Project\\Assets'));
 
 // Routes from firebase-integration.ts
 app.post('/api/users', async (req, res) => {
